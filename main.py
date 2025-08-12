@@ -1,0 +1,201 @@
+import flet as ft
+import logging
+
+# --- Importar las vistas de la aplicación ---
+from turismo_app.views.login_view import LoginView
+from turismo_app.views.home_view import HomeView
+from turismo_app.views.admin.admin_dashboard_view import AdminDashboardView
+from turismo_app.views.ciudadano.ciudadano_turismo_view import CiudadanoTurismoView
+from turismo_app.views.ciudadano.ciudadano_empleo_view import CiudadanoEmpleoView
+from turismo_app.views.ciudadano.ciudadano_feedback_view import CiudadanoFeedbackView
+from turismo_app.views.admin.gestion_contenido.admin_empresas_view import AdminEmpresasView
+
+# --- Configuración del Logging ---
+logging.basicConfig(level=logging.INFO)
+
+# --- Definición de Rutas ---
+# Es una buena práctica tener las rutas centralizadas
+ROUTE_HOME = "/"
+ROUTE_LOGIN = "/auth/login"
+ROUTE_ADMIN_DASHBOARD = "/admin/dashboard"
+ROUTE_ADMIN_EMPRESAS = "/admin/empresas"
+ROUTE_CIUDADANO_TURISMO = "/ciudadano/turismo"
+ROUTE_CIUDADANO_EMPLEO = "/ciudadano/empleo"
+ROUTE_CIUDADANO_FEEDBACK = "/ciudadano/feedback"
+
+class AppState:
+    """Clase simple para mantener el estado de la navegación."""
+    def __init__(self):
+        self.app_bar = None
+        self.nav_rail = None
+        self.main_content = None
+
+def main(page: ft.Page):
+    """Función principal que se ejecuta al iniciar la aplicación Flet."""
+
+    page.title = "Sistema de Gestión Turística Territorial"
+
+    # --- Configuración del Tema ---
+    page.theme_mode = ft.ThemeMode.LIGHT
+    page.theme = ft.Theme(
+        color_scheme_seed=ft.colors.BLUE_GREY,
+        use_material3=True,
+    )
+
+    # El objeto de estado para esta sesión
+    app_state = AppState()
+
+    # --- Lógica de Autenticación y Sesión ---
+    def on_login_success(user_data: dict):
+        """Callback que se ejecuta cuando el login es exitoso."""
+        logging.info(f"Usuario autenticado: {user_data['nombre_usuario']}, Rol: {user_data['rol']}")
+        # Guardar datos del usuario en la sesión de la página
+        for key, value in user_data.items():
+            page.session.set(f"user_{key}", value)
+
+        # Redirigir al dashboard correspondiente
+        if user_data['rol'] in ["SuperAdmin", "AdminMunicipal", "AdminDepartamental"]:
+            page.go(ROUTE_ADMIN_DASHBOARD)
+        else:
+            page.go(ROUTE_HOME)
+
+    def on_logout(e=None):
+        """Limpia la sesión y redirige al login."""
+        logging.info("Cerrando sesión de usuario.")
+        # Limpiar todas las claves de sesión relacionadas con el usuario
+        keys_to_clear = [key for key in page.session.get_keys() if key.startswith("user_")]
+        for key in keys_to_clear:
+            page.session.remove(key)
+        page.go(ROUTE_LOGIN)
+
+    # --- Definición de las Vistas/Rutas ---
+    def route_change(route_event: ft.RouteChangeEvent):
+        """Manejador de cambio de ruta."""
+        logging.info(f"Cambiando a la ruta: {route_event.route}")
+
+        # Proteger rutas que requieren autenticación
+        is_authenticated = page.session.get("user_id") is not None
+        is_admin = page.session.get("user_rol") in ["SuperAdmin", "AdminMunicipal", "AdminDepartamental"]
+
+        admin_routes = [ROUTE_ADMIN_DASHBOARD, ROUTE_ADMIN_EMPRESAS]
+
+        if route_event.route in admin_routes and not (is_authenticated and is_admin):
+            page.go(ROUTE_LOGIN)
+            return
+
+        # Limpiar la vista anterior
+        page.views.clear()
+
+        # --- Vistas Públicas / Comunes ---
+        if route_event.route == ROUTE_LOGIN:
+            page.views.append(
+                ft.View(
+                    route=ROUTE_LOGIN,
+                    controls=[LoginView(page, on_login_success=on_login_success)],
+                    vertical_alignment=ft.MainAxisAlignment.CENTER,
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                    padding=0
+                )
+            )
+        else:
+            # --- Vistas que usan la estructura principal (AppBar, NavRail) ---
+
+            # Crear la barra de navegación lateral (NavRail)
+            nav_rail_destinations = [
+                ft.NavigationRailDestination(icon=ft.icons.HOME_OUTLINED, selected_icon=ft.icons.HOME, label="Inicio"),
+                ft.NavigationRailDestination(icon=ft.icons.TRAVEL_EXPLORE_OUTLINED, selected_icon=ft.icons.TRAVEL_EXPLORE, label="Turismo"),
+                ft.NavigationRailDestination(icon=ft.icons.WORK_OUTLINE, selected_icon=ft.icons.WORK, label="Empleo"),
+                ft.NavigationRailDestination(icon=ft.icons.FEEDBACK_OUTLINED, selected_icon=ft.icons.FEEDBACK, label="Feedback"),
+            ]
+
+            if is_admin:
+                 nav_rail_destinations.append(
+                    ft.NavigationRailDestination(icon=ft.icons.DASHBOARD_OUTLINED, selected_icon=ft.icons.DASHBOARD, label="Admin")
+                 )
+
+            def on_nav_rail_change(e):
+                index = e.control.selected_index
+                if index == 0: page.go(ROUTE_HOME)
+                elif index == 1: page.go(ROUTE_CIUDADANO_TURISMO)
+                elif index == 2: page.go(ROUTE_CIUDADANO_EMPLEO)
+                elif index == 3: page.go(ROUTE_CIUDADANO_FEEDBACK)
+                elif index == 4 and is_admin: page.go(ROUTE_ADMIN_DASHBOARD)
+
+            # Determinar el índice seleccionado para el NavRail
+            route_to_nav_index = {
+                ROUTE_HOME: 0,
+                ROUTE_CIUDADANO_TURISMO: 1,
+                ROUTE_CIUDADANO_EMPLEO: 2,
+                ROUTE_CIUDADANO_FEEDBACK: 3,
+                ROUTE_ADMIN_DASHBOARD: 4,
+                ROUTE_ADMIN_EMPRESAS: 4, # También selecciona el ícono de Admin
+            }
+
+            app_state.nav_rail = ft.NavigationRail(
+                selected_index=route_to_nav_index.get(page.route, 0),
+                label_type=ft.NavigationRailLabelType.ALL,
+                destinations=nav_rail_destinations,
+                on_change=on_nav_rail_change,
+                group_alignment=-0.9
+            )
+
+            # Crear la barra de aplicación superior (AppBar)
+            app_state.app_bar = ft.AppBar(
+                title=ft.Text("Portal Turístico"),
+                center_title=False,
+                bgcolor=ft.colors.SURFACE_VARIANT,
+                actions=[
+                    ft.IconButton(ft.icons.BRIGHTNESS_4_OUTLINED, on_click=lambda e: setattr(page, 'theme_mode', 'dark' if page.theme_mode == 'light' else 'light') or page.update()),
+                    ft.PopupMenuButton(
+                        items=[
+                            ft.PopupMenuItem(text="Cerrar Sesión", icon=ft.icons.LOGOUT, on_click=on_logout) if is_authenticated else ft.PopupMenuItem(text="Iniciar Sesión", icon=ft.icons.LOGIN, on_click=lambda _: page.go(ROUTE_LOGIN))
+                        ]
+                    )
+                ]
+            )
+
+            # --- Contenido Principal (segun la ruta) ---
+            content_map = {
+                ROUTE_HOME: HomeView(page),
+                ROUTE_ADMIN_DASHBOARD: AdminDashboardView(page),
+                ROUTE_ADMIN_EMPRESAS: AdminEmpresasView(page),
+                ROUTE_CIUDADANO_TURISMO: CiudadanoTurismoView(page),
+                ROUTE_CIUDADANO_EMPLEO: CiudadanoEmpleoView(page),
+                ROUTE_CIUDADANO_FEEDBACK: CiudadanoFeedbackView(page),
+            }
+            app_state.main_content = content_map.get(page.route, ft.Text(f"Ruta no encontrada: {page.route}"))
+
+            page.views.append(
+                ft.View(
+                    route=page.route,
+                    controls=[
+                        app_state.app_bar,
+                        ft.Row(
+                            [
+                                app_state.nav_rail,
+                                ft.VerticalDivider(width=1),
+                                ft.Column([app_state.main_content], expand=True, scroll=ft.ScrollMode.ADAPTIVE),
+                            ],
+                            expand=True,
+                        )
+                    ],
+                    padding=0
+                )
+            )
+        page.update()
+
+    # --- Configuración Inicial de la Página ---
+    page.on_route_change = route_change
+
+    # Iniciar en la página de login si no hay sesión, si no en el home
+    if not page.session.get("user_id"):
+        page.go(ROUTE_LOGIN)
+    else:
+        page.go(ROUTE_HOME)
+
+# --- Punto de Entrada para Ejecutar la App ---
+if __name__ == "__main__":
+    ft.app(
+        target=main,
+        assets_dir="turismo_app/assets" # Servir archivos desde la carpeta de assets
+    )
