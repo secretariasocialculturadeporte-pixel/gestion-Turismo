@@ -195,12 +195,122 @@ def crear_o_actualizar_empresa(datos: dict, empresa_id: int | None = None) -> in
         return None
 
 
-# --- PLACEHOLDER para otras funciones ---
+# --- Funciones de Atractivos ---
+
+def listar_atractivos_publicos_paginado(filtros: dict, orden: dict, limit: int, offset: int) -> tuple[list[dict], int]:
+    """
+    Lista, filtra, ordena y pagina los atractivos turísticos aprobados para el público.
+    """
+    base_query = """
+        SELECT a.*, m.nombre_municipio
+        FROM atractivos_turisticos a
+        JOIN municipios m ON a.codigo_municipio = m.codigo_municipio
+    """
+    count_query = "SELECT COUNT(*) FROM atractivos_turisticos a"
+
+    # Solo mostrar atractivos aprobados y activos
+    where_clauses = ["a.aprobado_publicar = 1", "a.activo = 1"]
+    params = {}
+
+    if filtros.get("codigo_municipio"):
+        where_clauses.append("a.codigo_municipio = :codigo_municipio")
+        params["codigo_municipio"] = filtros["codigo_municipio"]
+
+    if filtros.get("nombre__icontains"):
+        where_clauses.append("a.nombre_atractivo LIKE :nombre_atractivo")
+        params["nombre_atractivo"] = f"%{filtros['nombre__icontains']}%"
+
+    if filtros.get("tipo_categoria_principal"):
+        where_clauses.append("a.tipo_categoria_principal = :tipo_categoria")
+        params["tipo_categoria"] = filtros["tipo_categoria_principal"]
+
+    if where_clauses:
+        where_sql = " WHERE " + " AND ".join(where_clauses)
+        base_query += where_sql
+        count_query += where_sql
+
+    if orden:
+        col, direccion = list(orden.items())[0]
+        # Sanitización simple
+        allowed_cols = ["nombre_atractivo", "tipo_categoria_principal"]
+        if col.split('.')[-1] in allowed_cols and direccion in ["ASC", "DESC"]:
+            base_query += f" ORDER BY {col} {direccion}"
+
+    base_query += " LIMIT :limit OFFSET :offset"
+    params["limit"] = limit
+    params["offset"] = offset
+
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            total_items = cursor.execute(count_query, params).fetchone()[0]
+            resultados = cursor.execute(base_query, params).fetchall()
+            return [dict(row) for row in resultados], total_items
+    except sqlite3.Error as e:
+        logger.error(f"Error al listar atractivos paginado: {e}", exc_info=True)
+        return [], 0
+
 def obtener_atractivo_por_id(atractivo_id: int) -> dict | None:
     # TODO: Implementar
     logger.warning("Función 'obtener_atractivo_por_id' no implementada.")
     return {"id": atractivo_id, "nombre_atractivo": f"Atractivo de Prueba {atractivo_id}", "codigo_municipio": "05360"}
 
+# --- Funciones de Vacantes ---
+
+def listar_vacantes_publicas_paginado(filtros: dict, orden: dict, limit: int, offset: int) -> tuple[list[dict], int]:
+    """
+    Lista, filtra, ordena y pagina las vacantes de empleo activas para el público.
+    """
+    base_query = """
+        SELECT v.*, m.nombre_municipio, e.razon_social_o_nombre_comercial as nombre_empleador
+        FROM vacantes_empleo v
+        JOIN municipios m ON v.codigo_municipio = m.codigo_municipio
+        LEFT JOIN empresas_prestadores_turisticos e ON v.empresa_id = e.id_empresa
+    """
+    count_query = "SELECT COUNT(*) FROM vacantes_empleo v"
+
+    where_clauses = ["v.activa = 1"]
+    params = {}
+
+    if filtros.get("codigo_municipio"):
+        where_clauses.append("v.codigo_municipio = :codigo_municipio")
+        params["codigo_municipio"] = filtros["codigo_municipio"]
+
+    if filtros.get("palabra_clave"):
+        keyword = f"%{filtros['palabra_clave']}%"
+        where_clauses.append("(v.titulo_vacante LIKE :keyword OR v.descripcion LIKE :keyword OR v.requisitos LIKE :keyword)")
+        params["keyword"] = keyword
+
+    if filtros.get("tipo_contrato"):
+        where_clauses.append("v.tipo_contrato = :tipo_contrato")
+        params["tipo_contrato"] = filtros["tipo_contrato"]
+
+    if where_clauses:
+        where_sql = " WHERE " + " AND ".join(where_clauses)
+        base_query += where_sql
+        count_query += where_sql
+
+    if orden:
+        col, direccion = list(orden.items())[0]
+        allowed_cols = ["v.titulo_vacante", "m.nombre_municipio", "v.fecha_publicacion"]
+        if col in allowed_cols and direccion in ["ASC", "DESC"]:
+            base_query += f" ORDER BY {col} {direccion}"
+
+    base_query += " LIMIT :limit OFFSET :offset"
+    params["limit"] = limit
+    params["offset"] = offset
+
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            total_items = cursor.execute(count_query, params).fetchone()[0]
+            resultados = cursor.execute(base_query, params).fetchall()
+            return [dict(row) for row in resultados], total_items
+    except sqlite3.Error as e:
+        logger.error(f"Error al listar vacantes paginado: {e}", exc_info=True)
+        return [], 0
+
+# --- Placeholder para otras funciones ---
 def crear_valoracion_destino(datos: dict) -> int | None:
     # TODO: Implementar
     logger.warning("Función 'crear_valoracion_destino' no implementada.")

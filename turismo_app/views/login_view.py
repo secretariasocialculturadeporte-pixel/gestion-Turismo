@@ -162,7 +162,7 @@ class LoginView(ft.Control):
                     self._show_error_message("Su cuenta de usuario ha sido desactivada. Contacte al administrador.")
                     logger.warning(f"Intento de login fallido (cuenta desactivada): {username}")
                 elif db_manager.verify_password(password, user_data_db['password_hash']):
-                    logger.info(f"Login exitoso para usuario: {username}")
+                    logger.info(f"Login exitoso para usuario: {username}. Datos de usuario: {dict(user_data_db)}")
                     self.on_login_success_callback(dict(user_data_db)) # Enviar dict
                 else:
                     self._show_error_message("Nombre de usuario o contraseña incorrectos.")

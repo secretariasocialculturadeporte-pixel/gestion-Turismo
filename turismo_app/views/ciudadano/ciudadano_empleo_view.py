@@ -171,9 +171,6 @@ class CiudadanoEmpleoView(ft.UserControl):
         self.tabla_vacantes.rows.clear()
         self.update()
 
-        time.sleep(0.5) # Simular delay
-
-        # Mocking data fetching
         self.filtros_aplicados_vacantes = {
             "codigo_municipio": self.selected_municipio_codigo_empleo,
             "tipo_contrato": self.dd_filtro_tipo_contrato_vac_ciudadano.value or None,
@@ -181,9 +178,14 @@ class CiudadanoEmpleoView(ft.UserControl):
         }
         self.filtros_aplicados_vacantes = {k: v for k, v in self.filtros_aplicados_vacantes.items() if v is not None}
 
-        # This function should exist in db_manager.py (mocked for now)
-        # resultados, total_items = db_manager.listar_vacantes_publicas_paginado(...)
-        resultados, total_items = [], 0 # Placeholder
+        offset = (self.current_page_vac_ciudadano - 1) * self.items_per_page_vac_ciudadano
+
+        resultados, total_items = db_manager.listar_vacantes_publicas_paginado(
+            filtros=self.filtros_aplicados_vacantes,
+            orden=self.orden_actual_vacantes,
+            limit=self.items_per_page_vac_ciudadano,
+            offset=offset
+        )
 
         self.total_items_vac_ciudadano = total_items
         if not resultados:
@@ -191,8 +193,16 @@ class CiudadanoEmpleoView(ft.UserControl):
                                                                             font_style=ft.FontStyle.ITALIC),
                                                                             colspan=len(self.tabla_vacantes.columns))]))
         else:
-            # Populate rows
-            pass
+            for vacante in resultados:
+                self.tabla_vacantes.rows.append(
+                    ft.DataRow(cells=[
+                        ft.DataCell(ft.Text(vacante.get("titulo_vacante"))),
+                        ft.DataCell(ft.Text(vacante.get("nombre_empleador") or vacante.get("nombre_empleador_alternativo", "N/A"))),
+                        ft.DataCell(ft.Text(vacante.get("nombre_municipio"))),
+                        ft.DataCell(ft.Text(datetime.datetime.fromisoformat(vacante.get("fecha_publicacion")).strftime("%Y-%m-%d"))),
+                        ft.DataCell(ft.IconButton(ft.icons.INFO_OUTLINE, on_click=self.ver_detalle_vacante, data=vacante)),
+                    ])
+                )
 
         self.loading_listado_empleo.visible = False
         self._actualizar_controles_paginacion_vacantes()
@@ -217,6 +227,11 @@ class CiudadanoEmpleoView(ft.UserControl):
         self.orden_actual_vacantes = {columna_sort_db: "ASC" if ascendente else "DESC"}
         self.current_page_vac_ciudadano = 1
         self._cargar_listado_vacantes_ciudadano()
+
+    def ver_detalle_vacante(self, e):
+        # TODO: Implementar diálogo de detalle
+        print("Ver detalle de vacante:", e.control.data)
+        pass
 
     def build(self):
         controles_filtros_ubicacion_emp = ft.ResponsiveRow(

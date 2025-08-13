@@ -171,31 +171,44 @@ class CiudadanoTurismoView(ft.UserControl):
         table_control.rows.clear()
         self.update()
 
-        # Simulación de llamada a DB
-        time.sleep(0.5) # Simular delay de red
-
-        # Aquí iría la llamada real a db_manager
-        # resultados, total_items = db_manager.listar_X_publico_paginado(...)
-
-        # Mock data
+        offset = (self.current_page[tipo_entidad] - 1) * self.items_per_page
         resultados, total_items = [], 0
-        if tipo_entidad == TIPO_EMPRESA:
+
+        if tipo_entidad == TIPO_ATRACTIVO:
+            resultados, total_items = db_manager.listar_atractivos_publicos_paginado(
+                filtros=self.filtros_aplicados_atractivos,
+                orden=self.orden_actual_atractivos,
+                limit=self.items_per_page,
+                offset=offset
+            )
+        elif tipo_entidad == TIPO_EMPRESA:
+            # Reutilizamos la función de admin, pero en un caso real podría ser una función
+            # específica para la vista pública que solo muestre campos aprobados.
             resultados, total_items = db_manager.listar_empresas_paginado_admin(
-                self.filtros_aplicados_empresas,
-                self.orden_actual_empresas,
-                self.items_per_page,
-                (self.current_page[TIPO_EMPRESA] - 1) * self.items_per_page
+                filtros=self.filtros_aplicados_empresas,
+                orden=self.orden_actual_empresas,
+                limit=self.items_per_page,
+                offset=offset
             )
 
         self.total_items[tipo_entidad] = total_items
 
         if not resultados:
-            table_control.rows.append(ft.DataRow([ft.DataCell(ft.Text(f"No se encontraron {tipo_entidad}.",
+            table_control.rows.append(ft.DataRow([ft.DataCell(ft.Text(f"No se encontraron {tipo_entidad} para este municipio.",
                                                                       font_style=ft.FontStyle.ITALIC),
                                                               colspan=len(table_control.columns))]))
         else:
             for item in resultados:
-                if tipo_entidad == TIPO_EMPRESA:
+                if tipo_entidad == TIPO_ATRACTIVO:
+                    table_control.rows.append(ft.DataRow(
+                        cells=[
+                            ft.DataCell(ft.Text(item.get("nombre_atractivo"))),
+                            ft.DataCell(ft.Text(item.get("tipo_categoria_principal"))),
+                            ft.DataCell(ft.Text(item.get("nombre_municipio"))),
+                            ft.DataCell(ft.IconButton(ft.icons.INFO_OUTLINE, on_click=self.ver_detalle_atractivo, data=item)),
+                        ]
+                    ))
+                elif tipo_entidad == TIPO_EMPRESA:
                      table_control.rows.append(ft.DataRow(
                         cells=[
                             ft.DataCell(ft.Text(item.get("razon_social_o_nombre_comercial"))),
@@ -246,8 +259,14 @@ class CiudadanoTurismoView(ft.UserControl):
         self.current_page[tipo_entidad] = 1
         self._cargar_listado_paginado_ciudadano(tipo_entidad)
 
+    def ver_detalle_atractivo(self, e):
+        # TODO: Implementar diálogo de detalle
+        print("Ver detalle de atractivo:", e.control.data)
+        pass
+
     def ver_detalle_empresa(self, e):
-        # Lógica para mostrar diálogo de detalle
+        # TODO: Implementar diálogo de detalle
+        print("Ver detalle de empresa:", e.control.data)
         pass
 
     def build(self):

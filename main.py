@@ -48,13 +48,14 @@ def main(page: ft.Page):
     # --- Lógica de Autenticación y Sesión ---
     def on_login_success(user_data: dict):
         """Callback que se ejecuta cuando el login es exitoso."""
-        logging.info(f"Usuario autenticado: {user_data['nombre_usuario']}, Rol: {user_data['rol']}")
+        logging.info(f"Callback on_login_success recibido. Usuario: {user_data.get('nombre_usuario')}, Rol: {user_data.get('rol')}")
         # Guardar datos del usuario en la sesión de la página
         for key, value in user_data.items():
             page.session.set(f"user_{key}", value)
+            logging.info(f"Guardando en sesión: user_{key} = {value}")
 
         # Redirigir al dashboard correspondiente
-        if user_data['rol'] in ["SuperAdmin", "AdminMunicipal", "AdminDepartamental"]:
+        if user_data.get('rol') in ["SuperAdmin", "AdminMunicipal", "AdminDepartamental"]:
             page.go(ROUTE_ADMIN_DASHBOARD)
         else:
             page.go(ROUTE_HOME)
