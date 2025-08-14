@@ -9,6 +9,7 @@ from turismo_app.views.ciudadano.ciudadano_turismo_view import CiudadanoTurismoV
 from turismo_app.views.ciudadano.ciudadano_empleo_view import CiudadanoEmpleoView
 from turismo_app.views.ciudadano.ciudadano_feedback_view import CiudadanoFeedbackView
 from turismo_app.views.admin.gestion_contenido.admin_empresas_view import AdminEmpresasView
+from turismo_app.views.chatbot_view import ChatbotView
 
 # --- Configuración del Logging ---
 logging.basicConfig(level=logging.INFO)
@@ -22,6 +23,7 @@ ROUTE_ADMIN_EMPRESAS = "/admin/empresas"
 ROUTE_CIUDADANO_TURISMO = "/ciudadano/turismo"
 ROUTE_CIUDADANO_EMPLEO = "/ciudadano/empleo"
 ROUTE_CIUDADANO_FEEDBACK = "/ciudadano/feedback"
+ROUTE_CHATBOT = "/chatbot"
 
 class AppState:
     """Clase simple para mantener el estado de la navegación."""
@@ -107,6 +109,7 @@ def main(page: ft.Page):
                 ft.NavigationRailDestination(icon=ft.icons.TRAVEL_EXPLORE_OUTLINED, selected_icon=ft.icons.TRAVEL_EXPLORE, label="Turismo"),
                 ft.NavigationRailDestination(icon=ft.icons.WORK_OUTLINE, selected_icon=ft.icons.WORK, label="Empleo"),
                 ft.NavigationRailDestination(icon=ft.icons.FEEDBACK_OUTLINED, selected_icon=ft.icons.FEEDBACK, label="Feedback"),
+                ft.NavigationRailDestination(icon=ft.icons.ASSISTANT_OUTLINED, selected_icon=ft.icons.ASSISTANT, label="Asistente"),
             ]
 
             if is_admin:
@@ -120,7 +123,8 @@ def main(page: ft.Page):
                 elif index == 1: page.go(ROUTE_CIUDADANO_TURISMO)
                 elif index == 2: page.go(ROUTE_CIUDADANO_EMPLEO)
                 elif index == 3: page.go(ROUTE_CIUDADANO_FEEDBACK)
-                elif index == 4 and is_admin: page.go(ROUTE_ADMIN_DASHBOARD)
+                elif index == 4: page.go(ROUTE_CHATBOT)
+                elif index == 5 and is_admin: page.go(ROUTE_ADMIN_DASHBOARD)
 
             # Determinar el índice seleccionado para el NavRail
             route_to_nav_index = {
@@ -128,8 +132,9 @@ def main(page: ft.Page):
                 ROUTE_CIUDADANO_TURISMO: 1,
                 ROUTE_CIUDADANO_EMPLEO: 2,
                 ROUTE_CIUDADANO_FEEDBACK: 3,
-                ROUTE_ADMIN_DASHBOARD: 4,
-                ROUTE_ADMIN_EMPRESAS: 4, # También selecciona el ícono de Admin
+                ROUTE_CHATBOT: 4,
+                ROUTE_ADMIN_DASHBOARD: 5,
+                ROUTE_ADMIN_EMPRESAS: 5, # También selecciona el ícono de Admin
             }
 
             app_state.nav_rail = ft.NavigationRail(
@@ -163,6 +168,7 @@ def main(page: ft.Page):
                 ROUTE_CIUDADANO_TURISMO: CiudadanoTurismoView(page),
                 ROUTE_CIUDADANO_EMPLEO: CiudadanoEmpleoView(page),
                 ROUTE_CIUDADANO_FEEDBACK: CiudadanoFeedbackView(page),
+                ROUTE_CHATBOT: ChatbotView(page),
             }
             app_state.main_content = content_map.get(page.route, ft.Text(f"Ruta no encontrada: {page.route}"))
 
