@@ -79,12 +79,17 @@ class AdminEncuestasView(ft.UserControl):
 
 
     def did_mount(self):
-        # En una app real, los DatePickers deben agregarse al overlay de la página
         if self.dp_fecha_encuesta not in self.page.overlay:
             self.page.overlay.append(self.dp_fecha_encuesta)
         if self.dp_llegada_turista not in self.page.overlay:
             self.page.overlay.append(self.dp_llegada_turista)
         self.page.update()
+        self._cargar_listado_encuestas()
+
+    def _cargar_listado_encuestas(self):
+        # Placeholder - en una app real esto tendría filtros y paginación
+        print("Cargando listado de encuestas (simulado)...")
+        pass
 
     def _actualizar_texto_fecha_picker(self, e, text_control, label):
         if e.control.value:
@@ -120,8 +125,32 @@ class AdminEncuestasView(ft.UserControl):
         return col
 
     def _guardar_encuesta_handler(self, e):
-        # Lógica de guardado
-        pass
+        # Lógica de guardado simulado
+        if not self.dp_fecha_encuesta.value or not self.txt_nacionalidad_turista.value:
+            # Simple validación de ejemplo
+            print("Error: Faltan campos obligatorios en la encuesta.")
+            return
+
+        datos_turista = {
+            "fecha_encuesta": self.dp_fecha_encuesta.value.isoformat(),
+            "nombre_turista": self.txt_nombre_turista_opc.value,
+            "nacionalidad": self.txt_nacionalidad_turista.value,
+            "codigo_municipio_encuestado": self.codigo_municipio_admin,
+            "registrado_por_usuario_id": self.user_id_admin,
+            # ... otros campos del turista
+        }
+
+        datos_percepcion = {}
+        for key, control in self.campos_formulario_percepcion_refs.items():
+            datos_percepcion[key] = control.value
+
+        # En la vida real, esto podría ser una transacción o dos llamadas separadas
+        # db_manager.guardar_registro_turista(datos_turista)
+        # db_manager.guardar_percepcion(datos_percepcion)
+        print("Guardando encuesta (simulado):", {"turista": datos_turista, "percepcion": datos_percepcion})
+
+        self._limpiar_formulario_encuesta_completo()
+        self._cargar_listado_encuestas()
 
     def _limpiar_formulario_encuesta_completo(self, e=None, reset_filtros_sa_no_usado=True):
         # Lógica de limpieza
