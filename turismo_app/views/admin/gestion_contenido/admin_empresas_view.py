@@ -62,6 +62,17 @@ class AdminEmpresasView(ft.UserControl):
         self.btn_guardar_emp = ft.ElevatedButton(text="Guardar Nueva Empresa", on_click=self._guardar_empresa_handler, icon=ft.icons.SAVE)
         self.btn_limpiar_emp = ft.TextButton(text="Limpiar Formulario", on_click=self._limpiar_formulario_empresa_completo, icon=ft.icons.CLEAR_ALL)
 
+        self.confirm_dialog = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Confirmar Acción"),
+            content=ft.Text("¿Está seguro de que desea eliminar este elemento?"),
+            actions=[
+                ft.TextButton("Sí", on_click=self._confirm_delete),
+                ft.TextButton("No", on_click=self._close_dialog),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+
         # --- Filtros para Listado ---
         self.txt_filtro_nombre_emp = ft.TextField(label="Buscar por Nombre", dense=True, on_submit=self._aplicar_filtros_empresas)
         self.btn_aplicar_filtros = ft.IconButton(icon=ft.icons.SEARCH, on_click=self._aplicar_filtros_empresas, tooltip="Aplicar filtros")
@@ -220,8 +231,8 @@ class AdminEmpresasView(ft.UserControl):
                     ft.DataCell(ft.Icon(ft.icons.CHECK_CIRCLE if emp['aprobada_publicar'] else ft.icons.CANCEL_OUTLINED)),
                     ft.DataCell(ft.Icon(ft.icons.TOGGLE_ON if emp['activo'] else ft.icons.TOGGLE_OFF)),
                     ft.DataCell(ft.Row([
-                        ft.IconButton(ft.icons.EDIT, data=emp['id'], on_click=self._cargar_empresa_para_edicion),
-                        # ft.IconButton(ft.icons.DELETE_FOREVER, data=emp['id'], on_click=self._eliminar_empresa_handler),
+                        ft.IconButton(ft.icons.EDIT, data=emp['id_empresa'], on_click=self._cargar_empresa_para_edicion),
+                        ft.IconButton(ft.icons.DELETE_FOREVER, data=emp['id_empresa'], on_click=self._eliminar_handler, tooltip="Eliminar Empresa"),
                     ])),
                 ]
             ))
@@ -229,6 +240,24 @@ class AdminEmpresasView(ft.UserControl):
         self.loading_tabla_emp.visible = False
         self._actualizar_controles_paginacion_empresas()
         self.update()
+
+    def _eliminar_handler(self, e):
+        self.page.dialog = self.confirm_dialog
+        self.confirm_dialog.data = e.control.data
+        self.confirm_dialog.open = True
+        self.page.update()
+
+    def _confirm_delete(self, e):
+        empresa_id = self.confirm_dialog.data
+        print(f"Simulando eliminación de la empresa ID: {empresa_id}")
+        # db_manager.eliminar_empresa(empresa_id)
+        self.confirm_dialog.open = False
+        self._cargar_listado_empresas()
+        self.page.update()
+
+    def _close_dialog(self, e):
+        self.confirm_dialog.open = False
+        self.page.update()
 
     def _actualizar_controles_paginacion_empresas(self):
         # Similar a la otra vista

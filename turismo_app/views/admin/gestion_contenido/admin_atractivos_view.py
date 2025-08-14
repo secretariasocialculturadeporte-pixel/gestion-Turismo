@@ -39,6 +39,17 @@ class AdminAtractivosView(ft.UserControl):
         self.btn_guardar = ft.ElevatedButton(text="Guardar Nuevo Atractivo", on_click=self._guardar_handler, icon=ft.icons.SAVE)
         self.btn_limpiar = ft.TextButton(text="Limpiar", on_click=self._limpiar_formulario, icon=ft.icons.CLEAR_ALL)
 
+        self.confirm_dialog = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Confirmar Acción"),
+            content=ft.Text("¿Está seguro de que desea eliminar este elemento?"),
+            actions=[
+                ft.TextButton("Sí", on_click=self._confirm_delete),
+                ft.TextButton("No", on_click=self._close_dialog),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+
         # === LISTADO DE ATRACTIVOS ===
         self.tabla_atractivos = ft.DataTable(
             columns=[
@@ -123,12 +134,23 @@ class AdminAtractivosView(ft.UserControl):
         self.update()
 
     def _eliminar_handler(self, e):
-        # En una app real, esto debería mostrar un diálogo de confirmación
-        # y probablemente solo desactivar (activo=False) en lugar de borrar.
-        atractivo_id = e.control.data
+        # Guardar el ID para usarlo si el usuario confirma
+        self.page.dialog = self.confirm_dialog
+        self.confirm_dialog.data = e.control.data # Pasa el ID del atractivo al diálogo
+        self.confirm_dialog.open = True
+        self.page.update()
+
+    def _confirm_delete(self, e):
+        atractivo_id = self.confirm_dialog.data
         print(f"Simulando eliminación del atractivo ID: {atractivo_id}")
         # db_manager.eliminar_atractivo(atractivo_id) # Se necesitaría esta función
+        self.confirm_dialog.open = False
         self._cargar_listado_atractivos()
+        self.page.update()
+
+    def _close_dialog(self, e):
+        self.confirm_dialog.open = False
+        self.page.update()
 
     def _limpiar_formulario(self, e=None):
         self.atractivo_id_actual_edicion = None

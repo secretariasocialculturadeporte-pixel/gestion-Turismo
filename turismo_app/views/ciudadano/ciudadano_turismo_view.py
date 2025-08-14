@@ -259,15 +259,43 @@ class CiudadanoTurismoView(ft.UserControl):
         self.current_page[tipo_entidad] = 1
         self._cargar_listado_paginado_ciudadano(tipo_entidad)
 
+    def _mostrar_dialogo_detalle(self, title: str, content_controls: list):
+        self.dialogo_detalle.title = ft.Text(title)
+        self.dialogo_detalle.content = ft.Column(content_controls, scroll=ft.ScrollMode.ADAPTIVE, tight=True)
+        self.dialogo_detalle.actions = [
+            ft.TextButton("Cerrar", on_click=lambda e: setattr(self.dialogo_detalle, 'open', False) or self.update())
+        ]
+        self.dialogo_detalle.open = True
+        self.update()
+
+    def _crear_fila_detalle(self, icono, etiqueta, valor):
+        return ft.Row([
+            ft.Icon(icono, size=16, color=ft.colors.OUTLINE),
+            ft.Text(f"{etiqueta}:", weight=ft.FontWeight.BOLD),
+            ft.Text(valor, selectable=True)
+        ], spacing=10)
+
     def ver_detalle_atractivo(self, e):
-        # TODO: Implementar diálogo de detalle
-        print("Ver detalle de atractivo:", e.control.data)
-        pass
+        atractivo = e.control.data
+        content = [
+            self._crear_fila_detalle(ft.icons.CATEGORY, "Categoría", atractivo.get("tipo_categoria_principal")),
+            self._crear_fila_detalle(ft.icons.DESCRIPTION, "Descripción", atractivo.get("descripcion_breve", "No disponible.")),
+            self._crear_fila_detalle(ft.icons.LOCATION_CITY, "Municipio", atractivo.get("nombre_municipio")),
+        ]
+        self._mostrar_dialogo_detalle(f"Detalle: {atractivo.get('nombre_atractivo')}", content)
 
     def ver_detalle_empresa(self, e):
-        # TODO: Implementar diálogo de detalle
-        print("Ver detalle de empresa:", e.control.data)
-        pass
+        empresa = e.control.data
+        content = [
+            self._crear_fila_detalle(ft.icons.STOREFRONT, "Tipo", empresa.get("tipo_prestador")),
+            self._crear_fila_detalle(ft.icons.DIALPAD, "Teléfono", empresa.get("telefonos_contacto")),
+            self._crear_fila_detalle(ft.icons.EMAIL, "Email", empresa.get("email_contacto")),
+            self._crear_fila_detalle(ft.icons.WEB, "Web", empresa.get("pagina_web")),
+            self._crear_fila_detalle(ft.icons.LOCATION_ON, "Dirección", empresa.get("direccion_principal")),
+            ft.Divider(),
+            ft.Text(empresa.get("descripcion_servicios", "No hay descripción disponible.")),
+        ]
+        self._mostrar_dialogo_detalle(f"Detalle: {empresa.get('razon_social_o_nombre_comercial')}", content)
 
     def build(self):
         selectores_ubicacion = ft.Row(
