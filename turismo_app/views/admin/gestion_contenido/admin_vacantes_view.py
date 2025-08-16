@@ -41,6 +41,10 @@ class AdminVacantesView(ft.UserControl):
         self.btn_limpiar = ft.TextButton(text="Limpiar", on_click=self._limpiar_formulario, icon=ft.icons.CLEAR_ALL)
 
         # === LISTADO DE VACANTES ===
+        self.txt_filtro_titulo = ft.TextField(label="Buscar por título...", on_submit=self._aplicar_filtros, dense=True, expand=True)
+        self.btn_aplicar_filtros = ft.IconButton(icon=ft.icons.SEARCH, on_click=self._aplicar_filtros)
+        self.paginacion_controls = ft.Row()
+
         self.tabla_vacantes = ft.DataTable(
             columns=[
                 ft.DataColumn(ft.Text("Título")),
@@ -52,12 +56,18 @@ class AdminVacantesView(ft.UserControl):
             rows=[]
         )
         self.loading_tabla = ft.ProgressRing(visible=False)
+        self.current_page = 1
+        self.items_per_page = 10
 
     def did_mount(self):
         if self.dp_fecha_cierre not in self.page.overlay:
             self.page.overlay.append(self.dp_fecha_cierre)
             self.page.update()
         self._cargar_empresas_dropdown()
+        self._cargar_listado_vacantes()
+
+    def _aplicar_filtros(self, e):
+        self.current_page = 1
         self._cargar_listado_vacantes()
 
     def _cargar_empresas_dropdown(self):
@@ -78,8 +88,18 @@ class AdminVacantesView(ft.UserControl):
         self.loading_tabla.visible = True
         self.update()
 
-        filtros = {"codigo_municipio": self.codigo_municipio_admin}
-        vacantes, _ = db_manager.listar_vacantes_admin_paginado(filtros=filtros, orden={}, limit=100, offset=0)
+        offset = (self.current_page - 1) * self.items_per_page
+        filtros = {
+            "codigo_municipio": self.codigo_municipio_admin,
+            "titulo_vacante__icontains": self.txt_filtro_titulo.value or None
+        }
+
+        vacantes, total_items = db_manager.listar_vacantes_admin_paginado(
+            filtros={k: v for k, v in filtros.items() if v is not None},
+            orden={},
+            limit=self.items_per_page,
+            offset=offset
+        )
 
         self.loading_tabla.visible = False
         if not vacantes:
@@ -90,8 +110,6 @@ class AdminVacantesView(ft.UserControl):
             for vacante in vacantes:
                 empleador = "N/A"
                 if vacante.get("empresa_id"):
-                    # En una app real, podríamos ya tener el nombre o hacer un join.
-                    # Por ahora, usamos el ID.
                     empleador = f"Empresa ID: {vacante.get('empresa_id')}"
                 else:
                     empleador = vacante.get("nombre_empleador_alternativo", "N/A")
@@ -107,6 +125,8 @@ class AdminVacantesView(ft.UserControl):
                         ])),
                     ])
                 )
+
+        self._actualizar_paginacion(total_items)
         self.update()
 
     def _guardar_handler(self, e):
@@ -168,6 +188,19 @@ class AdminVacantesView(ft.UserControl):
         self.btn_guardar.text = "Guardar Nueva Vacante"
         self.update()
 
+    def _actualizar_paginacion(self, total_items):
+        total_pages = (total_items + self.items_per_page - 1) // self.items_per_page
+        self.paginacion_controls.controls = []
+        if total_pages > 1:
+            self.paginacion_controls.controls.append(ft.IconButton(icon=ft.icons.KEYBOARD_ARROW_LEFT, on_click=lambda e: self._cambiar_pagina(e, -1), disabled=(self.current_page == 1)))
+            self.paginacion_controls.controls.append(ft.Text(f"Página {self.current_page} de {total_pages}"))
+            self.paginacion_controls.controls.append(ft.IconButton(icon=ft.icons.KEYBOARD_ARROW_RIGHT, on_click=lambda e: self._cambiar_pagina(e, 1), disabled=(self.current_page == total_pages)))
+        self.update()
+
+    def _cambiar_pagina(self, e, cambio):
+        self.current_page += cambio
+        self._cargar_listado_vacantes()
+
     def build(self):
         formulario = ft.Container(
             content=ft.Column([
@@ -186,13 +219,14 @@ class AdminVacantesView(ft.UserControl):
             padding=20
         )
 
-        listado = ft.Container(
-            content=ft.Column([
+        listado = ft.Column(
+            controls=[
                 ft.Text("Listado de Vacantes", style=ft.TextThemeStyle.TITLE_LARGE),
+                ft.Row([self.txt_filtro_titulo, self.btn_aplicar_filtros]),
                 self.loading_tabla,
-                self.tabla_vacantes
-            ]),
-            padding=20
+                self.tabla_vacantes,
+                self.paginacion_controls
+            ],
         )
 
         return ft.Column([

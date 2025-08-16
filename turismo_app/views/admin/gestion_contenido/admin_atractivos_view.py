@@ -51,6 +51,10 @@ class AdminAtractivosView(ft.UserControl):
         )
 
         # === LISTADO DE ATRACTIVOS ===
+        self.txt_filtro_nombre = ft.TextField(label="Buscar por nombre...", on_submit=self._aplicar_filtros, dense=True, expand=True)
+        self.btn_aplicar_filtros = ft.IconButton(icon=ft.icons.SEARCH, on_click=self._aplicar_filtros)
+        self.paginacion_controls = ft.Row()
+
         self.tabla_atractivos = ft.DataTable(
             columns=[
                 ft.DataColumn(ft.Text("Nombre del Atractivo")),
@@ -62,10 +66,15 @@ class AdminAtractivosView(ft.UserControl):
             rows=[]
         )
         self.loading_tabla = ft.ProgressRing(visible=False)
+        self.current_page = 1
+        self.items_per_page = 10
 
     def did_mount(self):
         # Lógica para cargar municipios si es SuperAdmin
-        # Cargar el listado inicial
+        self._cargar_listado_atractivos()
+
+    def _aplicar_filtros(self, e):
+        self.current_page = 1
         self._cargar_listado_atractivos()
 
     def _cargar_listado_atractivos(self):
@@ -73,8 +82,18 @@ class AdminAtractivosView(ft.UserControl):
         self.loading_tabla.visible = True
         self.update()
 
-        filtros = {"codigo_municipio": self.codigo_municipio_admin}
-        atractivos, _ = db_manager.listar_atractivos_admin_paginado(filtros=filtros, orden={}, limit=100, offset=0)
+        offset = (self.current_page - 1) * self.items_per_page
+        filtros = {
+            "codigo_municipio": self.codigo_municipio_admin,
+            "nombre_atractivo__icontains": self.txt_filtro_nombre.value or None
+        }
+
+        atractivos, total_items = db_manager.listar_atractivos_admin_paginado(
+            filtros={k: v for k, v in filtros.items() if v is not None},
+            orden={},
+            limit=self.items_per_page,
+            offset=offset
+        )
 
         self.loading_tabla.visible = False
         if not atractivos:
@@ -95,6 +114,7 @@ class AdminAtractivosView(ft.UserControl):
                         ])),
                     ])
                 )
+        self._actualizar_paginacion(total_items)
         self.update()
 
     def _guardar_handler(self, e):
@@ -163,6 +183,31 @@ class AdminAtractivosView(ft.UserControl):
         self.btn_guardar.text = "Guardar Nuevo Atractivo"
         self.update()
 
+    def _actualizar_paginacion(self, total_items):
+        total_pages = (total_items + self.items_per_page - 1) // self.items_per_page
+        self.paginacion_controls.controls = []
+        if total_pages > 1:
+            self.paginacion_controls.controls.append(
+                ft.IconButton(
+                    icon=ft.icons.KEYBOARD_ARROW_LEFT,
+                    on_click=lambda e: self._cambiar_pagina(e, -1),
+                    disabled=(self.current_page == 1)
+                )
+            )
+            self.paginacion_controls.controls.append(ft.Text(f"Página {self.current_page} de {total_pages}"))
+            self.paginacion_controls.controls.append(
+                ft.IconButton(
+                    icon=ft.icons.KEYBOARD_ARROW_RIGHT,
+                    on_click=lambda e: self._cambiar_pagina(e, 1),
+                    disabled=(self.current_page == total_pages)
+                )
+            )
+        self.update()
+
+    def _cambiar_pagina(self, e, cambio):
+        self.current_page += cambio
+        self._cargar_listado_atractivos()
+
     def build(self):
         # Estructura de la vista con Pestañas
         formulario = ft.Container(
@@ -176,16 +221,19 @@ class AdminAtractivosView(ft.UserControl):
                 self.sw_activo,
                 ft.Row([self.btn_guardar, self.btn_limpiar], alignment=ft.MainAxisAlignment.END)
             ]),
-            padding=20
+            padding=20,
+            expand=True,
         )
 
-        listado = ft.Container(
-            content=ft.Column([
+        listado = ft.Column(
+            controls=[
                 ft.Text("Listado de Atractivos", style=ft.TextThemeStyle.TITLE_LARGE),
+                ft.Row([self.txt_filtro_nombre, self.btn_aplicar_filtros]),
                 self.loading_tabla,
-                self.tabla_atractivos
-            ]),
-            padding=20
+                self.tabla_atractivos,
+                self.paginacion_controls
+            ],
+            expand=True,
         )
 
         return ft.Column([

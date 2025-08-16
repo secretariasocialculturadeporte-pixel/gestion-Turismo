@@ -40,6 +40,10 @@ class AdminIniciativasView(ft.UserControl):
         self.btn_limpiar = ft.TextButton(text="Limpiar", on_click=self._limpiar_formulario, icon=ft.icons.CLEAR_ALL)
 
         # === LISTADO DE INICIATIVAS ===
+        self.txt_filtro_nombre = ft.TextField(label="Buscar por nombre...", on_submit=self._aplicar_filtros, dense=True, expand=True)
+        self.btn_aplicar_filtros = ft.IconButton(icon=ft.icons.SEARCH, on_click=self._aplicar_filtros)
+        self.paginacion_controls = ft.Row()
+
         self.tabla_iniciativas = ft.DataTable(
             columns=[
                 ft.DataColumn(ft.Text("Nombre")),
@@ -50,8 +54,14 @@ class AdminIniciativasView(ft.UserControl):
             rows=[]
         )
         self.loading_tabla = ft.ProgressRing(visible=False)
+        self.current_page = 1
+        self.items_per_page = 10
 
     def did_mount(self):
+        self._cargar_listado_iniciativas()
+
+    def _aplicar_filtros(self, e):
+        self.current_page = 1
         self._cargar_listado_iniciativas()
 
     def _cargar_listado_iniciativas(self):
@@ -59,8 +69,18 @@ class AdminIniciativasView(ft.UserControl):
         self.loading_tabla.visible = True
         self.update()
 
-        filtros = {"codigo_municipio": self.codigo_municipio_admin}
-        iniciativas, _ = db_manager.listar_iniciativas_admin_paginado(filtros=filtros, orden={}, limit=100, offset=0)
+        offset = (self.current_page - 1) * self.items_per_page
+        filtros = {
+            "codigo_municipio": self.codigo_municipio_admin,
+            "nombre_iniciativa__icontains": self.txt_filtro_nombre.value or None
+        }
+
+        iniciativas, total_items = db_manager.listar_iniciativas_admin_paginado(
+            filtros={k: v for k, v in filtros.items() if v is not None},
+            orden={},
+            limit=self.items_per_page,
+            offset=offset
+        )
 
         self.loading_tabla.visible = False
         if not iniciativas:
@@ -79,6 +99,7 @@ class AdminIniciativasView(ft.UserControl):
                         ])),
                     ])
                 )
+        self._actualizar_paginacion(total_items)
         self.update()
 
     def _guardar_handler(self, e):
@@ -112,6 +133,19 @@ class AdminIniciativasView(ft.UserControl):
         self.btn_guardar.text = "Actualizar Iniciativa"
         self.update()
 
+    def _actualizar_paginacion(self, total_items):
+        total_pages = (total_items + self.items_per_page - 1) // self.items_per_page
+        self.paginacion_controls.controls = []
+        if total_pages > 1:
+            self.paginacion_controls.controls.append(ft.IconButton(icon=ft.icons.KEYBOARD_ARROW_LEFT, on_click=lambda e: self._cambiar_pagina(e, -1), disabled=(self.current_page == 1)))
+            self.paginacion_controls.controls.append(ft.Text(f"Página {self.current_page} de {total_pages}"))
+            self.paginacion_controls.controls.append(ft.IconButton(icon=ft.icons.KEYBOARD_ARROW_RIGHT, on_click=lambda e: self._cambiar_pagina(e, 1), disabled=(self.current_page == total_pages)))
+        self.update()
+
+    def _cambiar_pagina(self, e, cambio):
+        self.current_page += cambio
+        self._cargar_listado_iniciativas()
+
     def _limpiar_formulario(self, e=None):
         self.iniciativa_id_actual_edicion = None
         self.txt_nombre_iniciativa.value = ""
@@ -137,13 +171,15 @@ class AdminIniciativasView(ft.UserControl):
             padding=20
         )
 
-        listado = ft.Container(
-            content=ft.Column([
+        listado = ft.Column(
+            [
                 ft.Text("Listado de Iniciativas", style=ft.TextThemeStyle.TITLE_LARGE),
+                ft.Row([self.txt_filtro_nombre, self.btn_aplicar_filtros]),
                 self.loading_tabla,
-                self.tabla_iniciativas
-            ]),
-            padding=20
+                self.tabla_iniciativas,
+                self.paginacion_controls,
+            ],
+            spacing=10,
         )
 
         return ft.Column([

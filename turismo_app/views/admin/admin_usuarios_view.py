@@ -31,6 +31,10 @@ class AdminUsuariosView(ft.UserControl):
         self.btn_limpiar = ft.TextButton(text="Limpiar", on_click=self._limpiar_formulario, icon=ft.icons.CLEAR_ALL)
 
         # === LISTADO DE USUARIOS ===
+        self.txt_filtro_nombre = ft.TextField(label="Buscar por nombre...", on_submit=self._aplicar_filtros, dense=True, expand=True)
+        self.btn_aplicar_filtros = ft.IconButton(icon=ft.icons.SEARCH, on_click=self._aplicar_filtros)
+        self.paginacion_controls = ft.Row()
+
         self.tabla_usuarios = ft.DataTable(
             columns=[
                 ft.DataColumn(ft.Text("Nombre de Usuario")),
@@ -43,10 +47,15 @@ class AdminUsuariosView(ft.UserControl):
             rows=[]
         )
         self.loading_tabla = ft.ProgressRing(visible=False)
+        self.current_page = 1
+        self.items_per_page = 10
 
     def did_mount(self):
         # Cargar municipios para el dropdown
-        # Cargar el listado inicial de usuarios
+        self._cargar_listado_usuarios()
+
+    def _aplicar_filtros(self, e):
+        self.current_page = 1
         self._cargar_listado_usuarios()
 
     def _cargar_listado_usuarios(self):
@@ -54,15 +63,26 @@ class AdminUsuariosView(ft.UserControl):
         self.loading_tabla.visible = True
         self.update()
 
-        usuarios = db_manager.listar_usuarios_admin(filtros={})
+        # En una implementación real, el db_manager debería manejar paginación y filtros
+        # Aquí lo simulamos sobre la lista completa
+        all_users = db_manager.listar_usuarios_admin(filtros={})
+
+        # Simulación de filtro
+        if self.txt_filtro_nombre.value:
+            term = self.txt_filtro_nombre.value.lower()
+            all_users = [u for u in all_users if term in u.get("nombre_completo", "").lower() or term in u.get("nombre_usuario", "").lower()]
+
+        total_items = len(all_users)
+        offset = (self.current_page - 1) * self.items_per_page
+        paginated_users = all_users[offset : offset + self.items_per_page]
 
         self.loading_tabla.visible = False
-        if not usuarios:
+        if not paginated_users:
             self.tabla_usuarios.rows.append(
-                ft.DataRow(cells=[ft.DataCell(ft.Text("No hay usuarios para gestionar."), colspan=6)])
+                ft.DataRow(cells=[ft.DataCell(ft.Text("No se encontraron usuarios."), colspan=6)])
             )
         else:
-            for usuario in usuarios:
+            for usuario in paginated_users:
                 self.tabla_usuarios.rows.append(
                     ft.DataRow(cells=[
                         ft.DataCell(ft.Text(usuario.get("nombre_usuario"))),
@@ -75,6 +95,8 @@ class AdminUsuariosView(ft.UserControl):
                         ])),
                     ])
                 )
+
+        self._actualizar_paginacion(total_items)
         self.update()
 
     def _guardar_handler(self, e):
@@ -129,6 +151,19 @@ class AdminUsuariosView(ft.UserControl):
         self.btn_guardar.text = "Guardar Nuevo Usuario"
         self.update()
 
+    def _actualizar_paginacion(self, total_items):
+        total_pages = (total_items + self.items_per_page - 1) // self.items_per_page
+        self.paginacion_controls.controls = []
+        if total_pages > 1:
+            self.paginacion_controls.controls.append(ft.IconButton(icon=ft.icons.KEYBOARD_ARROW_LEFT, on_click=lambda e: self._cambiar_pagina(e, -1), disabled=(self.current_page == 1)))
+            self.paginacion_controls.controls.append(ft.Text(f"Página {self.current_page} de {total_pages}"))
+            self.paginacion_controls.controls.append(ft.IconButton(icon=ft.icons.KEYBOARD_ARROW_RIGHT, on_click=lambda e: self._cambiar_pagina(e, 1), disabled=(self.current_page == total_pages)))
+        self.update()
+
+    def _cambiar_pagina(self, e, cambio):
+        self.current_page += cambio
+        self._cargar_listado_usuarios()
+
     def build(self):
         # Solo SuperAdmins pueden ver esta vista
         if self.current_user_role != "SuperAdmin":
@@ -152,13 +187,14 @@ class AdminUsuariosView(ft.UserControl):
             padding=20
         )
 
-        listado = ft.Container(
-            content=ft.Column([
+        listado = ft.Column(
+            [
                 ft.Text("Listado de Usuarios", style=ft.TextThemeStyle.TITLE_LARGE),
+                ft.Row([self.txt_filtro_nombre, self.btn_aplicar_filtros]),
                 self.loading_tabla,
-                self.tabla_usuarios
-            ]),
-            padding=20
+                self.tabla_usuarios,
+                self.paginacion_controls,
+            ]
         )
 
         return ft.Column([

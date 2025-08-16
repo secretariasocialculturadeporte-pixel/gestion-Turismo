@@ -26,6 +26,10 @@ class AdminEventosView(ft.UserControl):
         self.btn_limpiar = ft.TextButton(text="Limpiar", on_click=self._limpiar_formulario, icon=ft.icons.CLEAR_ALL)
 
         # === LISTADO DE EVENTOS ===
+        self.txt_filtro_nombre = ft.TextField(label="Buscar por nombre...", on_submit=self._aplicar_filtros, dense=True, expand=True)
+        self.btn_aplicar_filtros = ft.IconButton(icon=ft.icons.SEARCH, on_click=self._aplicar_filtros)
+        self.paginacion_controls = ft.Row()
+
         self.tabla_eventos = ft.DataTable(
             columns=[
                 ft.DataColumn(ft.Text("Nombre del Evento")),
@@ -37,6 +41,8 @@ class AdminEventosView(ft.UserControl):
             rows=[]
         )
         self.loading_tabla = ft.ProgressRing(visible=False)
+        self.current_page = 1
+        self.items_per_page = 10
 
     def did_mount(self):
         if self.dp_fecha_inicio not in self.page.overlay:
@@ -44,6 +50,10 @@ class AdminEventosView(ft.UserControl):
         if self.dp_fecha_fin not in self.page.overlay:
             self.page.overlay.append(self.dp_fecha_fin)
             self.page.update()
+        self._cargar_listado_eventos()
+
+    def _aplicar_filtros(self, e):
+        self.current_page = 1
         self._cargar_listado_eventos()
 
     def _on_date_change(self, e, btn_control, label):
@@ -56,8 +66,18 @@ class AdminEventosView(ft.UserControl):
         self.loading_tabla.visible = True
         self.update()
 
-        filtros = {"codigo_municipio": self.codigo_municipio_admin}
-        eventos, _ = db_manager.listar_eventos_admin_paginado(filtros=filtros, orden={}, limit=100, offset=0)
+        offset = (self.current_page - 1) * self.items_per_page
+        filtros = {
+            "codigo_municipio": self.codigo_municipio_admin,
+            "nombre_evento__icontains": self.txt_filtro_nombre.value or None
+        }
+
+        eventos, total_items = db_manager.listar_eventos_admin_paginado(
+            filtros={k: v for k, v in filtros.items() if v is not None},
+            orden={},
+            limit=self.items_per_page,
+            offset=offset
+        )
 
         self.loading_tabla.visible = False
         if not eventos:
@@ -77,6 +97,8 @@ class AdminEventosView(ft.UserControl):
                         ])),
                     ])
                 )
+
+        self._actualizar_paginacion(total_items)
         self.update()
 
     def _guardar_handler(self, e):
@@ -127,6 +149,19 @@ class AdminEventosView(ft.UserControl):
         self.btn_guardar.text = "Guardar Nuevo Evento"
         self.update()
 
+    def _actualizar_paginacion(self, total_items):
+        total_pages = (total_items + self.items_per_page - 1) // self.items_per_page
+        self.paginacion_controls.controls = []
+        if total_pages > 1:
+            self.paginacion_controls.controls.append(ft.IconButton(icon=ft.icons.KEYBOARD_ARROW_LEFT, on_click=lambda e: self._cambiar_pagina(e, -1), disabled=(self.current_page == 1)))
+            self.paginacion_controls.controls.append(ft.Text(f"Página {self.current_page} de {total_pages}"))
+            self.paginacion_controls.controls.append(ft.IconButton(icon=ft.icons.KEYBOARD_ARROW_RIGHT, on_click=lambda e: self._cambiar_pagina(e, 1), disabled=(self.current_page == total_pages)))
+        self.update()
+
+    def _cambiar_pagina(self, e, cambio):
+        self.current_page += cambio
+        self._cargar_listado_eventos()
+
     def build(self):
         formulario = ft.Container(
             content=ft.Column([
@@ -140,13 +175,15 @@ class AdminEventosView(ft.UserControl):
             padding=20
         )
 
-        listado = ft.Container(
-            content=ft.Column([
+        listado = ft.Column(
+            [
                 ft.Text("Listado de Eventos", style=ft.TextThemeStyle.TITLE_LARGE),
+                ft.Row([self.txt_filtro_nombre, self.btn_aplicar_filtros]),
                 self.loading_tabla,
-                self.tabla_eventos
-            ]),
-            padding=20
+                self.tabla_eventos,
+                self.paginacion_controls,
+            ],
+            spacing=10
         )
 
         return ft.Column([
