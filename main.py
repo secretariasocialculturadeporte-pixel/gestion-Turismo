@@ -161,16 +161,23 @@ def main(page: ft.Page):
             )
 
             # --- Contenido Principal (segun la ruta) ---
-            content_map = {
-                ROUTE_HOME: HomeView(page),
-                ROUTE_ADMIN_DASHBOARD: AdminDashboardView(page),
-                ROUTE_ADMIN_EMPRESAS: AdminEmpresasView(page),
-                ROUTE_CIUDADANO_TURISMO: CiudadanoTurismoView(page),
-                ROUTE_CIUDADANO_EMPLEO: CiudadanoEmpleoView(page),
-                ROUTE_CIUDADANO_FEEDBACK: CiudadanoFeedbackView(page),
-                ROUTE_CHATBOT: ChatbotView(page),
+            view_classes = {
+                ROUTE_HOME: HomeView,
+                ROUTE_ADMIN_DASHBOARD: AdminDashboardView,
+                # ROUTE_ADMIN_EMPRESAS: AdminEmpresasView, # Asumiendo que esta es una de las que faltan
+                ROUTE_CIUDADANO_TURISMO: CiudadanoTurismoView,
+                ROUTE_CIUDADANO_EMPLEO: CiudadanoEmpleoView,
+                ROUTE_CIUDADANO_FEEDBACK: CiudadanoFeedbackView,
+                ROUTE_CHATBOT: ChatbotView,
             }
-            app_state.main_content = content_map.get(page.route, ft.Text(f"Ruta no encontrada: {page.route}"))
+
+            view_class = view_classes.get(page.route)
+            if view_class:
+                # Instanciar la clase y llamar a build()
+                app_state.main_content = view_class(page).build()
+            else:
+                app_state.main_content = ft.Text(f"Ruta no encontrada o vista no implementada: {page.route}")
+
 
             page.views.append(
                 ft.View(
