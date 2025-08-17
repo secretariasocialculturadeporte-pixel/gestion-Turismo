@@ -337,6 +337,38 @@ def setup_database():
             FOREIGN KEY (id_paquete) REFERENCES agencia_paquetes (id_paquete)
         );"""
 
+        # --- Tablas para el Módulo de Guías Turísticos (RAT) ---
+        sql_create_guias_perfiles_table = """
+        CREATE TABLE IF NOT EXISTS guias_perfiles (
+            id_guia INTEGER PRIMARY KEY, -- Coincide con id_usuario
+            idiomas TEXT, -- "Español,Inglés"
+            especialidades TEXT, -- "Historia,Naturaleza"
+            certificaciones TEXT,
+            tarifa_por_hora REAL,
+            FOREIGN KEY (id_guia) REFERENCES usuarios (id_usuario)
+        );"""
+
+        sql_create_guias_disponibilidad_table = """
+        CREATE TABLE IF NOT EXISTS guias_disponibilidad (
+            id_disponibilidad INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_guia INTEGER NOT NULL,
+            fecha DATE NOT NULL,
+            disponible INTEGER NOT NULL, -- 0 para no disponible, 1 para disponible
+            FOREIGN KEY (id_guia) REFERENCES usuarios (id_usuario)
+        );"""
+
+        sql_create_guias_reservas_tours_table = """
+        CREATE TABLE IF NOT EXISTS guias_reservas_tours (
+            id_reserva_tour INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_guia INTEGER NOT NULL,
+            id_cliente INTEGER NOT NULL,
+            fecha_hora_inicio DATETIME NOT NULL,
+            duracion_horas INTEGER NOT NULL,
+            estado TEXT NOT NULL, -- "Solicitada", "Confirmada", "Cancelada"
+            FOREIGN KEY (id_guia) REFERENCES usuarios (id_usuario),
+            FOREIGN KEY (id_cliente) REFERENCES usuarios (id_usuario)
+        );"""
+
         # Crear todas las tablas
         print("Creando tablas...")
         create_table(conn, sql_create_departamentos_table)
@@ -361,6 +393,9 @@ def setup_database():
         create_table(conn, sql_create_agencia_paquetes_table)
         create_table(conn, sql_create_paquete_servicios_table)
         create_table(conn, sql_create_agencia_reservas_paquetes_table)
+        create_table(conn, sql_create_guias_perfiles_table)
+        create_table(conn, sql_create_guias_disponibilidad_table)
+        create_table(conn, sql_create_guias_reservas_tours_table)
         print("Tablas creadas.")
 
         # --- Insertar Datos Iniciales ---
@@ -421,6 +456,7 @@ def setup_database():
         c.execute("INSERT INTO roles (nombre_rol, descripcion) VALUES (?, ?)", ('JefeDeSala', 'Maître o jefe de sala'))
         c.execute("INSERT INTO roles (nombre_rol, descripcion) VALUES (?, ?)", ('Camarero', 'Mesero o camarero'))
         c.execute("INSERT INTO roles (nombre_rol, descripcion) VALUES (?, ?)", ('Hostess', 'Recepcionista de restaurante'))
+        c.execute("INSERT INTO roles (nombre_rol, descripcion) VALUES (?, ?)", ('GuiaTuristico', 'Guía turístico profesional'))
 
         # Departamentos
         deptos = [('05', 'ANTIOQUIA'), ('08', 'ATLÁNTICO'), ('13', 'BOLÍVAR')]

@@ -24,6 +24,9 @@ from turismo_app.views.empresa.restaurante_kds_view import RestauranteKDSView
 from turismo_app.views.empresa.restaurante_recepcion_view import RestauranteRecepcionView
 from turismo_app.views.empresa.agencia_gestion_paquetes_view import AgenciaGestionPaquetesView
 from turismo_app.views.empresa.agencia_gestion_reservas_view import AgenciaGestionReservasView
+from turismo_app.views.guia.guia_perfil_view import GuiaPerfilView
+from turismo_app.views.guia.guia_reservas_view import GuiaReservasView
+from turismo_app.views.ciudadano.ciudadano_guias_view import CiudadanoGuiasView
 
 
 # --- Configuración del Logging ---
@@ -53,6 +56,9 @@ ROUTE_RESTAURANTE_KDS = "/empresa/restaurante/kds"
 ROUTE_RESTAURANTE_RECEPCION = "/empresa/restaurante/recepcion"
 ROUTE_AGENCIA_PAQUETES = "/empresa/agencia/paquetes"
 ROUTE_AGENCIA_RESERVAS = "/empresa/agencia/reservas"
+ROUTE_GUIA_PERFIL = "/guia/perfil"
+ROUTE_GUIA_RESERVAS = "/guia/reservas"
+ROUTE_CIUDADANO_GUIAS = "/ciudadano/guias"
 
 
 class AppState:
@@ -149,6 +155,7 @@ def main(page: ft.Page):
                 ft.NavigationRailDestination(icon=ft.icons.WORK_OUTLINE, selected_icon=ft.icons.WORK, label="Empleo"),
                 ft.NavigationRailDestination(icon=ft.icons.FEEDBACK_OUTLINED, selected_icon=ft.icons.FEEDBACK, label="Feedback"),
                 ft.NavigationRailDestination(icon=ft.icons.ASSISTANT_OUTLINED, selected_icon=ft.icons.ASSISTANT, label="Asistente"),
+                ft.NavigationRailDestination(icon=ft.icons.PERSON_SEARCH_OUTLINED, selected_icon=ft.icons.PERSON_SEARCH, label="Guías"),
             ]
 
             if is_admin:
@@ -167,7 +174,8 @@ def main(page: ft.Page):
                 elif index == 2: page.go(ROUTE_CIUDADANO_EMPLEO)
                 elif index == 3: page.go(ROUTE_CIUDADANO_FEEDBACK)
                 elif index == 4: page.go(ROUTE_CHATBOT)
-                elif index == 5:
+                elif index == 5: page.go(ROUTE_CIUDADANO_GUIAS)
+                elif index == 6:
                     if is_admin: page.go(ROUTE_ADMIN_DASHBOARD)
                     elif is_propietario: page.go(ROUTE_EMPRESA_DASHBOARD)
 
@@ -179,11 +187,14 @@ def main(page: ft.Page):
                 ROUTE_CIUDADANO_EMPLEO: 2,
                 ROUTE_CIUDADANO_FEEDBACK: 3,
                 ROUTE_CHATBOT: 4,
-                ROUTE_ADMIN_DASHBOARD: 5,
-                ROUTE_ADMIN_EMPRESAS: 5,
-                ROUTE_EMPRESA_DASHBOARD: 5,
-                ROUTE_EMPRESA_PRODUCTOS: 5,
-                ROUTE_EMPRESA_CLIENTES: 5,
+                ROUTE_CIUDADANO_GUIAS: 5,
+                ROUTE_ADMIN_DASHBOARD: 6,
+                ROUTE_ADMIN_EMPRESAS: 6,
+                ROUTE_EMPRESA_DASHBOARD: 6,
+                ROUTE_EMPRESA_PRODUCTOS: 6,
+                ROUTE_EMPRESA_CLIENTES: 6,
+                ROUTE_GUIA_PERFIL: 6,
+                ROUTE_GUIA_RESERVAS: 6,
             }
 
             app_state.nav_rail = ft.NavigationRail(
@@ -232,6 +243,9 @@ def main(page: ft.Page):
                 ROUTE_RESTAURANTE_RECEPCION: RestauranteRecepcionView,
                 ROUTE_AGENCIA_PAQUETES: AgenciaGestionPaquetesView,
                 ROUTE_AGENCIA_RESERVAS: AgenciaGestionReservasView,
+                ROUTE_GUIA_PERFIL: GuiaPerfilView,
+                ROUTE_GUIA_RESERVAS: GuiaReservasView,
+                ROUTE_CIUDADANO_GUIAS: CiudadanoGuiasView,
             }
 
             view_class = view_classes.get(page.route)

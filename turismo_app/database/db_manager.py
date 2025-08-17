@@ -317,5 +317,53 @@ def listar_reservas_paquetes_por_agencia(empresa_id: int):
 def crear_o_actualizar_reserva_paquete(datos: dict, reserva_id: int | None = None):
     return _crear_o_actualizar_generico("agencia_reservas_paquetes", "id_reserva_paquete", datos, reserva_id)
 
+# --- Gestión de Guías Turísticos (RAT) ---
+def crear_o_actualizar_perfil_guia(datos: dict, guia_id: int):
+    # El id del perfil es el mismo que el del usuario
+    datos["id_guia"] = guia_id
+    return _crear_o_actualizar_generico("guias_perfiles", "id_guia", datos, guia_id)
+
+def obtener_perfil_guia(guia_id: int):
+    try:
+        with get_db_connection() as conn:
+            perfil = conn.execute("SELECT * FROM guias_perfiles WHERE id_guia = ?", (guia_id,)).fetchone()
+            return dict(perfil) if perfil else None
+    except Exception as e:
+        logger.error(f"Error en obtener_perfil_guia: {e}")
+        return None
+
+def listar_guias_publico(filtros: dict):
+    query = """
+        SELECT u.id_usuario, u.nombre_completo, p.idiomas, p.especialidades, p.tarifa_por_hora
+        FROM usuarios u
+        JOIN guias_perfiles p ON u.id_usuario = p.id_guia
+        WHERE u.rol_id = (SELECT id_rol FROM roles WHERE nombre_rol = 'GuiaTuristico')
+    """
+    # Aquí se podrían añadir más filtros
+    try:
+        with get_db_connection() as conn:
+            guias = conn.execute(query).fetchall()
+            return [dict(row) for row in guias]
+    except Exception as e:
+        logger.error(f"Error en listar_guias_publico: {e}")
+        return []
+
+def crear_reserva_tour(datos: dict):
+    return _crear_o_actualizar_generico("guias_reservas_tours", "id_reserva_tour", datos, None)
+
+def listar_reservas_tours_por_guia(guia_id: int):
+    query = """
+        SELECT r.*, u.nombre_completo as nombre_cliente
+        FROM guias_reservas_tours r
+        JOIN usuarios u ON r.id_cliente = u.id_usuario
+        WHERE r.id_guia = ?
+    """
+    try:
+        with get_db_connection() as conn:
+            reservas = conn.execute(query, (guia_id,)).fetchall()
+            return [dict(row) for row in reservas]
+    except Exception as e:
+        logger.error(f"Error en listar_reservas_tours_por_guia: {e}")
+        return []
 
 # ... etc ...
