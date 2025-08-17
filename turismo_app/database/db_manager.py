@@ -285,4 +285,37 @@ def listar_items_por_pedido(pedido_id: int):
         logger.error(f"Error en listar_items_por_pedido: {e}")
         return []
 
+# --- Gestión de Agencias de Viajes (RAT) ---
+def listar_paquetes_por_agencia(empresa_id: int):
+    try:
+        with get_db_connection() as conn:
+            paquetes = conn.execute("SELECT * FROM agencia_paquetes WHERE id_empresa = ?", (empresa_id,)).fetchall()
+            return [dict(row) for row in paquetes]
+    except Exception as e:
+        logger.error(f"Error en listar_paquetes_por_agencia: {e}")
+        return []
+
+def crear_o_actualizar_paquete(datos: dict, paquete_id: int | None = None):
+    return _crear_o_actualizar_generico("agencia_paquetes", "id_paquete", datos, paquete_id)
+
+def listar_reservas_paquetes_por_agencia(empresa_id: int):
+    query = """
+        SELECT r.*, p.nombre_paquete, u.nombre_completo as nombre_cliente
+        FROM agencia_reservas_paquetes r
+        JOIN agencia_paquetes p ON r.id_paquete = p.id_paquete
+        JOIN usuarios u ON r.id_cliente = u.id_usuario
+        WHERE p.id_empresa = ?
+    """
+    try:
+        with get_db_connection() as conn:
+            reservas = conn.execute(query, (empresa_id,)).fetchall()
+            return [dict(row) for row in reservas]
+    except Exception as e:
+        logger.error(f"Error en listar_reservas_paquetes_por_agencia: {e}")
+        return []
+
+def crear_o_actualizar_reserva_paquete(datos: dict, reserva_id: int | None = None):
+    return _crear_o_actualizar_generico("agencia_reservas_paquetes", "id_reserva_paquete", datos, reserva_id)
+
+
 # ... etc ...

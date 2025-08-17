@@ -108,4 +108,18 @@ class EmpresaDashboardView:
                     "/empresa/restaurante/admin"
                 )
             ]
+
+        if self.empresa_info and self.empresa_info.get("tipo_prestador") == "AGENCIA_VIAJES":
+            return [
+                self._crear_acceso_directo(
+                    "Gestionar Paquetes",
+                    ft.icons.CARD_TRAVEL,
+                    "/empresa/agencia/paquetes"
+                ),
+                self._crear_acceso_directo(
+                    "Gestionar Reservas",
+                    ft.icons.BOOK_ONLINE,
+                    "/empresa/agencia/reservas"
+                ),
+            ]
         return []

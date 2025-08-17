@@ -22,6 +22,8 @@ from turismo_app.views.empresa.restaurante_gestion_mesas_view import Restaurante
 from turismo_app.views.empresa.restaurante_tpv_view import RestauranteTPVView
 from turismo_app.views.empresa.restaurante_kds_view import RestauranteKDSView
 from turismo_app.views.empresa.restaurante_recepcion_view import RestauranteRecepcionView
+from turismo_app.views.empresa.agencia_gestion_paquetes_view import AgenciaGestionPaquetesView
+from turismo_app.views.empresa.agencia_gestion_reservas_view import AgenciaGestionReservasView
 
 
 # --- Configuración del Logging ---
@@ -49,6 +51,8 @@ ROUTE_RESTAURANTE_MESAS = "/empresa/restaurante/mesas"
 ROUTE_RESTAURANTE_TPV = "/empresa/restaurante/tpv"
 ROUTE_RESTAURANTE_KDS = "/empresa/restaurante/kds"
 ROUTE_RESTAURANTE_RECEPCION = "/empresa/restaurante/recepcion"
+ROUTE_AGENCIA_PAQUETES = "/empresa/agencia/paquetes"
+ROUTE_AGENCIA_RESERVAS = "/empresa/agencia/reservas"
 
 
 class AppState:
@@ -226,6 +230,8 @@ def main(page: ft.Page):
                 ROUTE_RESTAURANTE_TPV: RestauranteTPVView,
                 ROUTE_RESTAURANTE_KDS: RestauranteKDSView,
                 ROUTE_RESTAURANTE_RECEPCION: RestauranteRecepcionView,
+                ROUTE_AGENCIA_PAQUETES: AgenciaGestionPaquetesView,
+                ROUTE_AGENCIA_RESERVAS: AgenciaGestionReservasView,
             }
 
             view_class = view_classes.get(page.route)

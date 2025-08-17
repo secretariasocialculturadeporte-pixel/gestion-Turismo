@@ -303,6 +303,40 @@ def setup_database():
             FOREIGN KEY (id_producto) REFERENCES restaurante_menu_productos (id_producto)
         );"""
 
+        # --- Tablas para el Módulo de Agencias de Viajes (RAT) ---
+        sql_create_agencia_paquetes_table = """
+        CREATE TABLE IF NOT EXISTS agencia_paquetes (
+            id_paquete INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_empresa INTEGER NOT NULL,
+            nombre_paquete TEXT NOT NULL,
+            descripcion TEXT,
+            precio_total REAL NOT NULL,
+            duracion_dias INTEGER,
+            activo INTEGER DEFAULT 1,
+            FOREIGN KEY (id_empresa) REFERENCES empresas_prestadores_turisticos (id_empresa)
+        );"""
+
+        sql_create_paquete_servicios_table = """
+        CREATE TABLE IF NOT EXISTS paquete_servicios (
+            id_paquete_servicio INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_paquete INTEGER NOT NULL,
+            tipo_servicio TEXT NOT NULL, -- "hotel", "tour", "transporte"
+            id_servicio_especifico INTEGER NOT NULL,
+            descripcion_servicio TEXT,
+            FOREIGN KEY (id_paquete) REFERENCES agencia_paquetes (id_paquete)
+        );"""
+
+        sql_create_agencia_reservas_paquetes_table = """
+        CREATE TABLE IF NOT EXISTS agencia_reservas_paquetes (
+            id_reserva_paquete INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_paquete INTEGER NOT NULL,
+            id_cliente INTEGER NOT NULL, -- Podría ser un id de la tabla usuarios o una nueva tabla de clientes
+            fecha_inicio DATE NOT NULL,
+            numero_personas INTEGER NOT NULL,
+            estado TEXT NOT NULL, -- "Confirmada", "Cancelada", "Completada"
+            FOREIGN KEY (id_paquete) REFERENCES agencia_paquetes (id_paquete)
+        );"""
+
         # Crear todas las tablas
         print("Creando tablas...")
         create_table(conn, sql_create_departamentos_table)
@@ -324,6 +358,9 @@ def setup_database():
         create_table(conn, sql_create_restaurante_menu_productos_table)
         create_table(conn, sql_create_restaurante_pedidos_table)
         create_table(conn, sql_create_restaurante_pedidos_items_table)
+        create_table(conn, sql_create_agencia_paquetes_table)
+        create_table(conn, sql_create_paquete_servicios_table)
+        create_table(conn, sql_create_agencia_reservas_paquetes_table)
         print("Tablas creadas.")
 
         # --- Insertar Datos Iniciales ---
