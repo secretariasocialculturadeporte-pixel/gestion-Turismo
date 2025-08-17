@@ -366,4 +366,29 @@ def listar_reservas_tours_por_guia(guia_id: int):
         logger.error(f"Error en listar_reservas_tours_por_guia: {e}")
         return []
 
+# --- Gestión de Inventario de Dotación ---
+def crear_o_actualizar_tipo_item(datos: dict, tipo_item_id: int | None = None):
+    return _crear_o_actualizar_generico("inventario_tipos_item", "id_tipo_item", datos, tipo_item_id)
+
+def listar_tipos_item_por_empresa(empresa_id: int):
+    try:
+        with get_db_connection() as conn:
+            tipos = conn.execute("SELECT * FROM inventario_tipos_item WHERE id_empresa = ?", (empresa_id,)).fetchall()
+            return [dict(row) for row in tipos]
+    except Exception as e:
+        logger.error(f"Error en listar_tipos_item_por_empresa: {e}")
+        return []
+
+def registrar_item_individual(datos: dict):
+    return _crear_o_actualizar_generico("inventario_items_individuales", "id_item_individual", datos, None)
+
+def listar_items_individuales_por_tipo(tipo_item_id: int):
+    try:
+        with get_db_connection() as conn:
+            items = conn.execute("SELECT * FROM inventario_items_individuales WHERE id_tipo_item = ?", (tipo_item_id,)).fetchall()
+            return [dict(row) for row in items]
+    except Exception as e:
+        logger.error(f"Error en listar_items_individuales_por_tipo: {e}")
+        return []
+
 # ... etc ...

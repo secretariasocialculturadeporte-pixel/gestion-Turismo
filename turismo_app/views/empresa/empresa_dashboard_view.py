@@ -72,6 +72,11 @@ class EmpresaDashboardView:
                             ft.icons.EDIT_SQUARE,
                             f"/admin/empresas?edit_id={self.empresa_id}"
                         ),
+                        self._crear_acceso_directo(
+                            "Gestionar Inventario",
+                            ft.icons.INVENTORY,
+                            "/empresa/inventario"
+                        ),
                     ] + self._crear_accesos_directos_hotel(),
                     wrap=True,
                     spacing=20,

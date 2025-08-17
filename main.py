@@ -27,6 +27,7 @@ from turismo_app.views.empresa.agencia_gestion_reservas_view import AgenciaGesti
 from turismo_app.views.guia.guia_perfil_view import GuiaPerfilView
 from turismo_app.views.guia.guia_reservas_view import GuiaReservasView
 from turismo_app.views.ciudadano.ciudadano_guias_view import CiudadanoGuiasView
+from turismo_app.views.empresa.gestion_inventario_view import GestionInventarioView
 
 
 # --- Configuración del Logging ---
@@ -56,6 +57,7 @@ ROUTE_RESTAURANTE_KDS = "/empresa/restaurante/kds"
 ROUTE_RESTAURANTE_RECEPCION = "/empresa/restaurante/recepcion"
 ROUTE_AGENCIA_PAQUETES = "/empresa/agencia/paquetes"
 ROUTE_AGENCIA_RESERVAS = "/empresa/agencia/reservas"
+ROUTE_EMPRESA_INVENTARIO = "/empresa/inventario"
 ROUTE_GUIA_PERFIL = "/guia/perfil"
 ROUTE_GUIA_RESERVAS = "/guia/reservas"
 ROUTE_CIUDADANO_GUIAS = "/ciudadano/guias"
@@ -243,6 +245,7 @@ def main(page: ft.Page):
                 ROUTE_RESTAURANTE_RECEPCION: RestauranteRecepcionView,
                 ROUTE_AGENCIA_PAQUETES: AgenciaGestionPaquetesView,
                 ROUTE_AGENCIA_RESERVAS: AgenciaGestionReservasView,
+                ROUTE_EMPRESA_INVENTARIO: GestionInventarioView,
                 ROUTE_GUIA_PERFIL: GuiaPerfilView,
                 ROUTE_GUIA_RESERVAS: GuiaReservasView,
                 ROUTE_CIUDADANO_GUIAS: CiudadanoGuiasView,

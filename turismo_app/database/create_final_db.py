@@ -369,6 +369,31 @@ def setup_database():
             FOREIGN KEY (id_cliente) REFERENCES usuarios (id_usuario)
         );"""
 
+        # --- Tabla de Inventario de Dotación ---
+        # --- Tablas de Inventario de Dotación ---
+        sql_create_inventario_tipos_item_table = """
+        CREATE TABLE IF NOT EXISTS inventario_tipos_item (
+            id_tipo_item INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_empresa INTEGER NOT NULL,
+            nombre_tipo TEXT NOT NULL,
+            categoria TEXT,
+            descripcion TEXT,
+            stock_minimo_deseado INTEGER,
+            FOREIGN KEY (id_empresa) REFERENCES empresas_prestadores_turisticos (id_empresa)
+        );"""
+
+        sql_create_inventario_items_individuales_table = """
+        CREATE TABLE IF NOT EXISTS inventario_items_individuales (
+            id_item_individual INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_tipo_item INTEGER NOT NULL,
+            estado TEXT NOT NULL,
+            fecha_compra DATE,
+            veces_usado INTEGER DEFAULT 0,
+            fecha_ultimo_mantenimiento DATE,
+            notas_mantenimiento TEXT,
+            FOREIGN KEY (id_tipo_item) REFERENCES inventario_tipos_item (id_tipo_item)
+        );"""
+
         # Crear todas las tablas
         print("Creando tablas...")
         create_table(conn, sql_create_departamentos_table)
@@ -396,6 +421,8 @@ def setup_database():
         create_table(conn, sql_create_guias_perfiles_table)
         create_table(conn, sql_create_guias_disponibilidad_table)
         create_table(conn, sql_create_guias_reservas_tours_table)
+        create_table(conn, sql_create_inventario_tipos_item_table)
+        create_table(conn, sql_create_inventario_items_individuales_table)
         print("Tablas creadas.")
 
         # --- Insertar Datos Iniciales ---
