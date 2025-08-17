@@ -13,6 +13,9 @@ from turismo_app.views.chatbot_view import ChatbotView
 from turismo_app.views.empresa.empresa_dashboard_view import EmpresaDashboardView
 from turismo_app.views.empresa.empresa_gestion_productos_view import EmpresaGestionProductosView
 from turismo_app.views.empresa.empresa_registro_clientes_view import EmpresaRegistroClientesView
+from turismo_app.views.empresa.hotel_gestion_habitaciones_view import HotelGestionHabitacionesView
+from turismo_app.views.empresa.hotel_gestion_reservas_view import HotelGestionReservasView
+from turismo_app.views.empresa.hotel_calendario_ocupacion_view import HotelCalendarioOcupacionView
 
 
 # --- Configuración del Logging ---
@@ -31,6 +34,9 @@ ROUTE_CHATBOT = "/chatbot"
 ROUTE_EMPRESA_DASHBOARD = "/empresa/dashboard"
 ROUTE_EMPRESA_PRODUCTOS = "/empresa/productos"
 ROUTE_EMPRESA_CLIENTES = "/empresa/clientes"
+ROUTE_HOTEL_HABITACIONES = "/empresa/hotel/habitaciones"
+ROUTE_HOTEL_RESERVAS = "/empresa/hotel/reservas"
+ROUTE_HOTEL_CALENDARIO = "/empresa/hotel/calendario"
 
 
 class AppState:
@@ -199,6 +205,9 @@ def main(page: ft.Page):
                 ROUTE_EMPRESA_DASHBOARD: EmpresaDashboardView,
                 ROUTE_EMPRESA_PRODUCTOS: EmpresaGestionProductosView,
                 ROUTE_EMPRESA_CLIENTES: EmpresaRegistroClientesView,
+                ROUTE_HOTEL_HABITACIONES: HotelGestionHabitacionesView,
+                ROUTE_HOTEL_RESERVAS: HotelGestionReservasView,
+                ROUTE_HOTEL_CALENDARIO: HotelCalendarioOcupacionView,
             }
 
             view_class = view_classes.get(page.route)

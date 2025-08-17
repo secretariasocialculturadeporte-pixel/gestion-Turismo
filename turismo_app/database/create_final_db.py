@@ -215,6 +215,45 @@ def setup_database():
             FOREIGN KEY (codigo_municipio) REFERENCES municipios (codigo_municipio)
         );"""
 
+        # --- Tablas para el Módulo de Hoteles (RAT) ---
+        sql_create_hotel_habitaciones_table = """
+        CREATE TABLE IF NOT EXISTS hotel_habitaciones (
+            id_habitacion INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_empresa INTEGER NOT NULL,
+            nombre_habitacion TEXT NOT NULL, -- Ej: "Habitación 101", "Suite Presidencial"
+            tipo_habitacion TEXT NOT NULL, -- Ej: "Sencilla", "Doble", "Suite"
+            capacidad INTEGER NOT NULL,
+            precio_base REAL NOT NULL,
+            descripcion TEXT,
+            activa INTEGER DEFAULT 1,
+            FOREIGN KEY (id_empresa) REFERENCES empresas_prestadores_turisticos (id_empresa)
+        );"""
+
+        sql_create_hotel_reservas_table = """
+        CREATE TABLE IF NOT EXISTS hotel_reservas (
+            id_reserva INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_habitacion INTEGER NOT NULL,
+            id_huesped INTEGER,
+            fecha_inicio DATE NOT NULL,
+            fecha_fin DATE NOT NULL,
+            estado TEXT NOT NULL, -- "Confirmada", "Cancelada", "Check-In", "Check-Out"
+            notas TEXT,
+            fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (id_habitacion) REFERENCES hotel_habitaciones (id_habitacion),
+            FOREIGN KEY (id_huesped) REFERENCES hotel_huespedes (id_huesped)
+        );"""
+
+        sql_create_hotel_huespedes_table = """
+        CREATE TABLE IF NOT EXISTS hotel_huespedes (
+            id_huesped INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre_completo TEXT NOT NULL,
+            email TEXT,
+            telefono TEXT,
+            documento_identidad TEXT UNIQUE,
+            preferencias TEXT,
+            fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );"""
+
         # Crear todas las tablas
         print("Creando tablas...")
         create_table(conn, sql_create_departamentos_table)
@@ -229,6 +268,9 @@ def setup_database():
         create_table(conn, sql_create_diagnostico_table)
         create_table(conn, sql_create_iniciativas_table)
         create_table(conn, sql_create_eventos_table)
+        create_table(conn, sql_create_hotel_habitaciones_table)
+        create_table(conn, sql_create_hotel_reservas_table)
+        create_table(conn, sql_create_hotel_huespedes_table)
         print("Tablas creadas.")
 
         # --- Insertar Datos Iniciales ---

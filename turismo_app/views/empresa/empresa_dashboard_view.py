@@ -72,10 +72,31 @@ class EmpresaDashboardView:
                             ft.icons.EDIT_SQUARE,
                             f"/admin/empresas?edit_id={self.empresa_id}"
                         ),
-                    ],
+                    ] + self._crear_accesos_directos_hotel(),
                     wrap=True,
                     spacing=20,
                     run_spacing=20
                 )
             ]
         )
+
+    def _crear_accesos_directos_hotel(self):
+        if self.empresa_info and self.empresa_info.get("tipo_prestador") in ["ALOJAMIENTO_URBANO", "ALOJAMIENTO_RURAL"]:
+            return [
+                self._crear_acceso_directo(
+                    "Configurar Habitaciones",
+                    ft.icons.BED,
+                    "/empresa/hotel/habitaciones"
+                ),
+                self._crear_acceso_directo(
+                    "Gestionar Reservas",
+                    ft.icons.BOOK,
+                    "/empresa/hotel/reservas"
+                ),
+                self._crear_acceso_directo(
+                    "Ver Calendario",
+                    ft.icons.CALENDAR_MONTH,
+                    "/empresa/hotel/calendario"
+                ),
+            ]
+        return []
