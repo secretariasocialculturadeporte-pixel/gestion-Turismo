@@ -10,6 +10,10 @@ from turismo_app.views.ciudadano.ciudadano_empleo_view import CiudadanoEmpleoVie
 from turismo_app.views.ciudadano.ciudadano_feedback_view import CiudadanoFeedbackView
 from turismo_app.views.admin.gestion_contenido.admin_empresas_view import AdminEmpresasView
 from turismo_app.views.chatbot_view import ChatbotView
+from turismo_app.views.empresa.empresa_dashboard_view import EmpresaDashboardView
+from turismo_app.views.empresa.empresa_gestion_productos_view import EmpresaGestionProductosView
+from turismo_app.views.empresa.empresa_registro_clientes_view import EmpresaRegistroClientesView
+
 
 # --- Configuración del Logging ---
 logging.basicConfig(level=logging.INFO)
@@ -24,6 +28,10 @@ ROUTE_CIUDADANO_TURISMO = "/ciudadano/turismo"
 ROUTE_CIUDADANO_EMPLEO = "/ciudadano/empleo"
 ROUTE_CIUDADANO_FEEDBACK = "/ciudadano/feedback"
 ROUTE_CHATBOT = "/chatbot"
+ROUTE_EMPRESA_DASHBOARD = "/empresa/dashboard"
+ROUTE_EMPRESA_PRODUCTOS = "/empresa/productos"
+ROUTE_EMPRESA_CLIENTES = "/empresa/clientes"
+
 
 class AppState:
     """Clase simple para mantener el estado de la navegación."""
@@ -59,6 +67,8 @@ def main(page: ft.Page):
         # Redirigir al dashboard correspondiente
         if user_data.get('rol') in ["SuperAdmin", "AdminMunicipal", "AdminDepartamental"]:
             page.go(ROUTE_ADMIN_DASHBOARD)
+        elif user_data.get('rol') == "PropietarioEmpresa":
+            page.go(ROUTE_EMPRESA_DASHBOARD)
         else:
             page.go(ROUTE_HOME)
 
@@ -78,11 +88,18 @@ def main(page: ft.Page):
 
         # Proteger rutas que requieren autenticación
         is_authenticated = page.session.get("user_id") is not None
-        is_admin = page.session.get("user_rol") in ["SuperAdmin", "AdminMunicipal", "AdminDepartamental"]
+        user_rol = page.session.get("user_rol")
+        is_admin = user_rol in ["SuperAdmin", "AdminMunicipal", "AdminDepartamental"]
+        is_propietario = user_rol == "PropietarioEmpresa"
 
         admin_routes = [ROUTE_ADMIN_DASHBOARD, ROUTE_ADMIN_EMPRESAS]
+        empresa_routes = [ROUTE_EMPRESA_DASHBOARD, ROUTE_EMPRESA_PRODUCTOS, ROUTE_EMPRESA_CLIENTES]
 
         if route_event.route in admin_routes and not (is_authenticated and is_admin):
+            page.go(ROUTE_LOGIN)
+            return
+
+        if route_event.route in empresa_routes and not (is_authenticated and is_propietario):
             page.go(ROUTE_LOGIN)
             return
 
@@ -113,9 +130,13 @@ def main(page: ft.Page):
             ]
 
             if is_admin:
-                 nav_rail_destinations.append(
+                nav_rail_destinations.append(
                     ft.NavigationRailDestination(icon=ft.icons.DASHBOARD_OUTLINED, selected_icon=ft.icons.DASHBOARD, label="Admin")
-                 )
+                )
+            if is_propietario:
+                nav_rail_destinations.append(
+                    ft.NavigationRailDestination(icon=ft.icons.BUSINESS_OUTLINED, selected_icon=ft.icons.BUSINESS, label="Mi Empresa")
+                )
 
             def on_nav_rail_change(e):
                 index = e.control.selected_index
@@ -124,7 +145,10 @@ def main(page: ft.Page):
                 elif index == 2: page.go(ROUTE_CIUDADANO_EMPLEO)
                 elif index == 3: page.go(ROUTE_CIUDADANO_FEEDBACK)
                 elif index == 4: page.go(ROUTE_CHATBOT)
-                elif index == 5 and is_admin: page.go(ROUTE_ADMIN_DASHBOARD)
+                elif index == 5:
+                    if is_admin: page.go(ROUTE_ADMIN_DASHBOARD)
+                    elif is_propietario: page.go(ROUTE_EMPRESA_DASHBOARD)
+
 
             # Determinar el índice seleccionado para el NavRail
             route_to_nav_index = {
@@ -134,7 +158,10 @@ def main(page: ft.Page):
                 ROUTE_CIUDADANO_FEEDBACK: 3,
                 ROUTE_CHATBOT: 4,
                 ROUTE_ADMIN_DASHBOARD: 5,
-                ROUTE_ADMIN_EMPRESAS: 5, # También selecciona el ícono de Admin
+                ROUTE_ADMIN_EMPRESAS: 5,
+                ROUTE_EMPRESA_DASHBOARD: 5,
+                ROUTE_EMPRESA_PRODUCTOS: 5,
+                ROUTE_EMPRESA_CLIENTES: 5,
             }
 
             app_state.nav_rail = ft.NavigationRail(
@@ -164,11 +191,14 @@ def main(page: ft.Page):
             view_classes = {
                 ROUTE_HOME: HomeView,
                 ROUTE_ADMIN_DASHBOARD: AdminDashboardView,
-                # ROUTE_ADMIN_EMPRESAS: AdminEmpresasView, # Asumiendo que esta es una de las que faltan
+                ROUTE_ADMIN_EMPRESAS: AdminEmpresasView,
                 ROUTE_CIUDADANO_TURISMO: CiudadanoTurismoView,
                 ROUTE_CIUDADANO_EMPLEO: CiudadanoEmpleoView,
                 ROUTE_CIUDADANO_FEEDBACK: CiudadanoFeedbackView,
                 ROUTE_CHATBOT: ChatbotView,
+                ROUTE_EMPRESA_DASHBOARD: EmpresaDashboardView,
+                ROUTE_EMPRESA_PRODUCTOS: EmpresaGestionProductosView,
+                ROUTE_EMPRESA_CLIENTES: EmpresaRegistroClientesView,
             }
 
             view_class = view_classes.get(page.route)
@@ -214,15 +244,4 @@ if __name__ == "__main__":
     ft.app(
         target=main,
         assets_dir="turismo_app/assets"
-        # PWA features commented out to isolate the import errors
-        # web_app_manifest=ft.WebAppManifest(
-        #     name="TurismoApp",
-        #     short_name="TurismoApp",
-        #     description="Sistema Integrado de Gestión Turística Territorial",
-        #     icons=[
-        #         ft.WebAppManifestIcon("icons/logo_app_login_192.png", sizes="192x192"),
-        #         ft.WebAppManifestIcon("icons/logo_app_login_512.png", sizes="512x512"),
-        #     ]
-        # ),
-        # service_worker_url="/sw.js"
     )

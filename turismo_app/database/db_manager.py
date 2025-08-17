@@ -98,6 +98,78 @@ def _crear_o_actualizar_generico(tabla: str, p_key: str, datos: dict, id_registr
 # --- Implementaciones para cada módulo ---
 def listar_empresas_paginado_admin(f, o, l, off): return _ejecutar_consulta_paginada("SELECT e.*, m.nombre_municipio FROM empresas_prestadores_turisticos e JOIN municipios m ON e.codigo_municipio = m.codigo_municipio", "SELECT COUNT(*) FROM empresas_prestadores_turisticos e", f, o, l, off, ["razon_social_o_nombre_comercial", "activo"])
 def crear_o_actualizar_empresa(d, id=None): return _crear_o_actualizar_generico("empresas_prestadores_turisticos", "id_empresa", d, id)
+
+def obtener_empresa_por_id(empresa_id: int):
+    try:
+        with get_db_connection() as conn:
+            empresa = conn.execute("SELECT * FROM empresas_prestadores_turisticos WHERE id_empresa = ?", (empresa_id,)).fetchone()
+            return dict(empresa) if empresa else None
+    except Exception as e:
+        logger.error(f"Error en obtener_empresa_por_id: {e}")
+        return None
+# --- Gestión de Productos/Eventos por Empresa ---
+def listar_productos_eventos_por_empresa_paginado(filtros: dict, orden: dict, limit: int, offset: int):
+    base_query = "SELECT * FROM productos_eventos_empresa"
+    count_query = "SELECT COUNT(*) FROM productos_eventos_empresa"
+    allowed_cols = ["nombre_producto_evento", "tipo_oferta", "fecha_inicio", "activo"]
+    return _ejecutar_consulta_paginada(base_query, count_query, filtros, orden, limit, offset, allowed_cols)
+
+def crear_o_actualizar_producto_evento(datos: dict, producto_id: int | None = None):
+    return _crear_o_actualizar_generico("productos_eventos_empresa", "id_producto_evento", datos, producto_id)
+
+def obtener_producto_evento_por_id(producto_id: int):
+    try:
+        with get_db_connection() as conn:
+            producto = conn.execute("SELECT * FROM productos_eventos_empresa WHERE id_producto_evento = ?", (producto_id,)).fetchone()
+            return dict(producto) if producto else None
+    except Exception as e:
+        logger.error(f"Error en obtener_producto_evento_por_id: {e}")
+        return None
+
+def borrar_producto_evento(producto_id: int, audit_user_id: int | None = None):
+    try:
+        with get_db_connection() as conn:
+            conn.execute("DELETE FROM productos_eventos_empresa WHERE id_producto_evento = ?", (producto_id,))
+            log_audit(audit_user_id, "DELETE_PRODUCTO_EVENTO", f"ID: {producto_id}")
+            return True
+    except Exception as e:
+        logger.error(f"Error en borrar_producto_evento: {e}")
+        return False
+
+# --- Gestión de Registros de Clientes por Empresa ---
+def registrar_cliente(datos: dict):
+    # Esta función no usa el genérico porque es un INSERT simple sin update.
+    sql = """
+        INSERT INTO registros_clientes (empresa_id, pais_origen_cliente, fecha_registro, cantidad, audit_user_id)
+        VALUES (:empresa_id, :pais_origen_cliente, :fecha_registro, :cantidad, :audit_user_id)
+    """
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(sql, datos)
+            log_audit(datos.get('audit_user_id'), "CREATE_REGISTRO_CLIENTE", f"Empresa ID: {datos.get('empresa_id')}, Pais: {datos.get('pais_origen_cliente')}")
+            return cursor.lastrowid
+    except Exception as e:
+        logger.error(f"Error en registrar_cliente: {e}")
+        return None
+
+def obtener_resumen_clientes_por_empresa(empresa_id: int):
+    """Retorna un conteo de clientes por país para una empresa específica."""
+    query = """
+        SELECT pais_origen_cliente, SUM(cantidad) as total_clientes
+        FROM registros_clientes
+        WHERE empresa_id = ?
+        GROUP BY pais_origen_cliente
+        ORDER BY total_clientes DESC
+    """
+    try:
+        with get_db_connection() as conn:
+            resultados = conn.execute(query, (empresa_id,)).fetchall()
+            return [dict(row) for row in resultados]
+    except Exception as e:
+        logger.error(f"Error en obtener_resumen_clientes_por_empresa: {e}")
+        return []
+
 # ... y así para el resto de funciones ...
 def listar_atractivos_admin_paginado(f, o, l, off): return [], 0
 def crear_o_actualizar_atractivo(d, id=None): return 1

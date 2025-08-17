@@ -1,0 +1,81 @@
+import flet as ft
+from turismo_app.database import db_manager
+
+class EmpresaDashboardView:
+    def __init__(self, page: ft.Page):
+        self.page = page
+        self.user_nombre = page.session.get("user_nombre_completo")
+        self.empresa_id = page.session.get("user_id_empresa_asociada")
+        self.empresa_info = db_manager.obtener_empresa_por_id(self.empresa_id)
+        self.nombre_empresa = self.empresa_info.get("razon_social_o_nombre_comercial") if self.empresa_info else "Empresa no encontrada"
+        self.resumen_clientes = db_manager.obtener_resumen_clientes_por_empresa(self.empresa_id)
+
+    def _crear_acceso_directo(self, titulo, icono, ruta):
+        return ft.Card(
+            elevation=2,
+            content=ft.Container(
+                width=200,
+                height=150,
+                padding=15,
+                on_click=lambda _: self.page.go(ruta),
+                ink=True,
+                content=ft.Column(
+                    [
+                        ft.Icon(icono, size=40),
+                        ft.Text(titulo, weight=ft.FontWeight.BOLD, text_align="center"),
+                    ],
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                    alignment=ft.MainAxisAlignment.CENTER,
+                    spacing=10
+                )
+            )
+        )
+
+    def build(self):
+        # Crear la tabla de resumen de clientes
+        tabla_resumen = ft.DataTable(
+            columns=[
+                ft.DataColumn(ft.Text("País de Origen")),
+                ft.DataColumn(ft.Text("Total Clientes"), numeric=True),
+            ],
+            rows=[
+                ft.DataRow(cells=[ft.DataCell(ft.Text(row["pais_origen_cliente"])), ft.DataCell(ft.Text(str(row["total_clientes"])))])
+                for row in self.resumen_clientes
+            ]
+        )
+
+        return ft.Column(
+            spacing=20,
+            padding=30,
+            controls=[
+                ft.Text(f"Bienvenido, {self.user_nombre}", style=ft.TextThemeStyle.HEADLINE_LARGE),
+                ft.Text(f"Panel de Gestión para: {self.nombre_empresa}", style=ft.TextThemeStyle.TITLE_MEDIUM, color=ft.colors.OUTLINE),
+                ft.Divider(),
+                ft.Text("Resumen de Clientes", style=ft.TextThemeStyle.TITLE_LARGE),
+                tabla_resumen,
+                ft.Divider(),
+                ft.Text("Accesos Directos", style=ft.TextThemeStyle.TITLE_LARGE),
+                ft.Row(
+                    controls=[
+                        self._crear_acceso_directo(
+                            "Gestionar Productos/Eventos",
+                            ft.icons.CATEGORY,
+                            "/empresa/productos"
+                        ),
+                        self._crear_acceso_directo(
+                            "Registrar Clientes",
+                            ft.icons.PEOPLE_ALT,
+                            "/empresa/clientes"
+                        ),
+                        self._crear_acceso_directo(
+                            "Editar Información de la Empresa",
+                            ft.icons.EDIT_SQUARE,
+                            f"/admin/empresas?edit_id={self.empresa_id}"
+                        ),
+                    ],
+                    wrap=True,
+                    spacing=20,
+                    run_spacing=20
+                )
+            ]
+        )

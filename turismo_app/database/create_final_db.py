@@ -67,11 +67,13 @@ def setup_database():
             rol_id INTEGER NOT NULL,
             codigo_municipio TEXT,
             codigo_departamento TEXT,
+            id_empresa_asociada INTEGER,
             activo INTEGER NOT NULL DEFAULT 1,
             fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (rol_id) REFERENCES roles (id_rol),
             FOREIGN KEY (codigo_municipio) REFERENCES municipios (codigo_municipio),
-            FOREIGN KEY (codigo_departamento) REFERENCES departamentos (codigo_departamento)
+            FOREIGN KEY (codigo_departamento) REFERENCES departamentos (codigo_departamento),
+            FOREIGN KEY (id_empresa_asociada) REFERENCES empresas_prestadores_turisticos (id_empresa)
         );"""
 
         # --- Tablas de Contenido Principal ---
@@ -233,9 +235,55 @@ def setup_database():
         print("Insertando datos iniciales...")
         c = conn.cursor()
 
+        sql_create_productos_eventos_table = """
+        CREATE TABLE IF NOT EXISTS productos_eventos_empresa (
+            id_producto_evento INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_empresa INTEGER NOT NULL,
+            nombre TEXT NOT NULL,
+            descripcion TEXT,
+            tipo TEXT NOT NULL, -- 'Producto' o 'Evento'
+            precio REAL,
+            fecha_evento DATE,
+            activo INTEGER DEFAULT 1,
+            FOREIGN KEY (id_empresa) REFERENCES empresas_prestadores_turisticos (id_empresa)
+        );"""
+
+        sql_create_registros_clientes_table = """
+        CREATE TABLE IF NOT EXISTS registros_clientes (
+            id_registro_cliente INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_empresa INTEGER NOT NULL,
+            nacionalidad TEXT NOT NULL, -- 'Nacional' o 'Extranjero'
+            cantidad INTEGER DEFAULT 1,
+            fecha_registro DATE NOT NULL,
+            FOREIGN KEY (id_empresa) REFERENCES empresas_prestadores_turisticos (id_empresa)
+        );"""
+
+        # Crear todas las tablas
+        print("Creando tablas...")
+        create_table(conn, sql_create_departamentos_table)
+        create_table(conn, sql_create_municipios_table)
+        create_table(conn, sql_create_roles_table)
+        create_table(conn, sql_create_usuarios_table)
+        create_table(conn, sql_create_empresas_table)
+        create_table(conn, sql_create_vacantes_table)
+        create_table(conn, sql_create_turistas_registros_table)
+        create_table(conn, sql_create_encuestas_percepcion_table)
+        create_table(conn, sql_create_atractivos_table)
+        create_table(conn, sql_create_diagnostico_table)
+        create_table(conn, sql_create_iniciativas_table)
+        create_table(conn, sql_create_eventos_table)
+        create_table(conn, sql_create_productos_eventos_table)
+        create_table(conn, sql_create_registros_clientes_table)
+        print("Tablas creadas.")
+
+        # --- Insertar Datos Iniciales ---
+        print("Insertando datos iniciales...")
+        c = conn.cursor()
+
         # Roles
         c.execute("INSERT INTO roles (nombre_rol, descripcion) VALUES (?, ?)", ('SuperAdmin', 'Control total del sistema'))
         c.execute("INSERT INTO roles (nombre_rol, descripcion) VALUES (?, ?)", ('AdminMunicipal', 'Gestor de contenido de un municipio'))
+        c.execute("INSERT INTO roles (nombre_rol, descripcion) VALUES (?, ?)", ('PropietarioEmpresa', 'Dueño de un negocio turístico'))
         c.execute("INSERT INTO roles (nombre_rol, descripcion) VALUES (?, ?)", ('Ciudadano', 'Usuario público de la aplicación'))
 
         # Departamentos
