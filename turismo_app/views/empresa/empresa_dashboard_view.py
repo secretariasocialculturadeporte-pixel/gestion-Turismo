@@ -99,4 +99,13 @@ class EmpresaDashboardView:
                     "/empresa/hotel/calendario"
                 ),
             ]
+
+        if self.empresa_info and self.empresa_info.get("tipo_prestador") == "RESTAURANTE_BAR":
+            return [
+                self._crear_acceso_directo(
+                    "Panel de Restaurante",
+                    ft.icons.RESTAURANT_MENU,
+                    "/empresa/restaurante/admin"
+                )
+            ]
         return []

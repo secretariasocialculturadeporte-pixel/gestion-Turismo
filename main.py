@@ -16,6 +16,12 @@ from turismo_app.views.empresa.empresa_registro_clientes_view import EmpresaRegi
 from turismo_app.views.empresa.hotel_gestion_habitaciones_view import HotelGestionHabitacionesView
 from turismo_app.views.empresa.hotel_gestion_reservas_view import HotelGestionReservasView
 from turismo_app.views.empresa.hotel_calendario_ocupacion_view import HotelCalendarioOcupacionView
+from turismo_app.views.empresa.restaurante_admin_panel_view import RestauranteAdminPanelView
+from turismo_app.views.empresa.restaurante_gestion_menu_view import RestauranteGestionMenuView
+from turismo_app.views.empresa.restaurante_gestion_mesas_view import RestauranteGestionMesasView
+from turismo_app.views.empresa.restaurante_tpv_view import RestauranteTPVView
+from turismo_app.views.empresa.restaurante_kds_view import RestauranteKDSView
+from turismo_app.views.empresa.restaurante_recepcion_view import RestauranteRecepcionView
 
 
 # --- Configuración del Logging ---
@@ -37,6 +43,12 @@ ROUTE_EMPRESA_CLIENTES = "/empresa/clientes"
 ROUTE_HOTEL_HABITACIONES = "/empresa/hotel/habitaciones"
 ROUTE_HOTEL_RESERVAS = "/empresa/hotel/reservas"
 ROUTE_HOTEL_CALENDARIO = "/empresa/hotel/calendario"
+ROUTE_RESTAURANTE_ADMIN = "/empresa/restaurante/admin"
+ROUTE_RESTAURANTE_MENU = "/empresa/restaurante/menu"
+ROUTE_RESTAURANTE_MESAS = "/empresa/restaurante/mesas"
+ROUTE_RESTAURANTE_TPV = "/empresa/restaurante/tpv"
+ROUTE_RESTAURANTE_KDS = "/empresa/restaurante/kds"
+ROUTE_RESTAURANTE_RECEPCION = "/empresa/restaurante/recepcion"
 
 
 class AppState:
@@ -208,6 +220,12 @@ def main(page: ft.Page):
                 ROUTE_HOTEL_HABITACIONES: HotelGestionHabitacionesView,
                 ROUTE_HOTEL_RESERVAS: HotelGestionReservasView,
                 ROUTE_HOTEL_CALENDARIO: HotelCalendarioOcupacionView,
+                ROUTE_RESTAURANTE_ADMIN: RestauranteAdminPanelView,
+                ROUTE_RESTAURANTE_MENU: RestauranteGestionMenuView,
+                ROUTE_RESTAURANTE_MESAS: RestauranteGestionMesasView,
+                ROUTE_RESTAURANTE_TPV: RestauranteTPVView,
+                ROUTE_RESTAURANTE_KDS: RestauranteKDSView,
+                ROUTE_RESTAURANTE_RECEPCION: RestauranteRecepcionView,
             }
 
             view_class = view_classes.get(page.route)

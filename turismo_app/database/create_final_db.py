@@ -254,6 +254,55 @@ def setup_database():
             fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );"""
 
+        # --- Tablas para el Módulo de Restaurantes (RAT) ---
+        sql_create_restaurante_mesas_table = """
+        CREATE TABLE IF NOT EXISTS restaurante_mesas (
+            id_mesa INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_empresa INTEGER NOT NULL,
+            nombre_mesa TEXT NOT NULL, -- Ej: "Mesa 5", "Barra 1"
+            capacidad INTEGER NOT NULL,
+            estado TEXT NOT NULL, -- "Libre", "Ocupada", "Reservada"
+            FOREIGN KEY (id_empresa) REFERENCES empresas_prestadores_turisticos (id_empresa)
+        );"""
+
+        sql_create_restaurante_menu_productos_table = """
+        CREATE TABLE IF NOT EXISTS restaurante_menu_productos (
+            id_producto INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_empresa INTEGER NOT NULL,
+            nombre_producto TEXT NOT NULL,
+            descripcion TEXT,
+            precio REAL NOT NULL,
+            categoria TEXT, -- "Entradas", "Platos Fuertes", "Bebidas"
+            disponible INTEGER DEFAULT 1,
+            FOREIGN KEY (id_empresa) REFERENCES empresas_prestadores_turisticos (id_empresa)
+        );"""
+
+        sql_create_restaurante_pedidos_table = """
+        CREATE TABLE IF NOT EXISTS restaurante_pedidos (
+            id_pedido INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_mesa INTEGER NOT NULL,
+            id_mesero INTEGER NOT NULL,
+            estado TEXT NOT NULL, -- "Abierto", "Enviado a Cocina", "Cerrado"
+            total REAL,
+            fecha_apertura TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            fecha_cierre TIMESTAMP,
+            FOREIGN KEY (id_mesa) REFERENCES restaurante_mesas (id_mesa),
+            FOREIGN KEY (id_mesero) REFERENCES usuarios (id_usuario)
+        );"""
+
+        sql_create_restaurante_pedidos_items_table = """
+        CREATE TABLE IF NOT EXISTS restaurante_pedidos_items (
+            id_pedido_item INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_pedido INTEGER NOT NULL,
+            id_producto INTEGER NOT NULL,
+            cantidad INTEGER NOT NULL,
+            precio_unitario REAL NOT NULL,
+            estado TEXT NOT NULL, -- "Pedido", "En Preparación", "Entregado"
+            notas TEXT,
+            FOREIGN KEY (id_pedido) REFERENCES restaurante_pedidos (id_pedido),
+            FOREIGN KEY (id_producto) REFERENCES restaurante_menu_productos (id_producto)
+        );"""
+
         # Crear todas las tablas
         print("Creando tablas...")
         create_table(conn, sql_create_departamentos_table)
@@ -271,6 +320,10 @@ def setup_database():
         create_table(conn, sql_create_hotel_habitaciones_table)
         create_table(conn, sql_create_hotel_reservas_table)
         create_table(conn, sql_create_hotel_huespedes_table)
+        create_table(conn, sql_create_restaurante_mesas_table)
+        create_table(conn, sql_create_restaurante_menu_productos_table)
+        create_table(conn, sql_create_restaurante_pedidos_table)
+        create_table(conn, sql_create_restaurante_pedidos_items_table)
         print("Tablas creadas.")
 
         # --- Insertar Datos Iniciales ---
@@ -327,6 +380,10 @@ def setup_database():
         c.execute("INSERT INTO roles (nombre_rol, descripcion) VALUES (?, ?)", ('AdminMunicipal', 'Gestor de contenido de un municipio'))
         c.execute("INSERT INTO roles (nombre_rol, descripcion) VALUES (?, ?)", ('PropietarioEmpresa', 'Dueño de un negocio turístico'))
         c.execute("INSERT INTO roles (nombre_rol, descripcion) VALUES (?, ?)", ('Ciudadano', 'Usuario público de la aplicación'))
+        c.execute("INSERT INTO roles (nombre_rol, descripcion) VALUES (?, ?)", ('ChefEjecutivo', 'Jefe de cocina'))
+        c.execute("INSERT INTO roles (nombre_rol, descripcion) VALUES (?, ?)", ('JefeDeSala', 'Maître o jefe de sala'))
+        c.execute("INSERT INTO roles (nombre_rol, descripcion) VALUES (?, ?)", ('Camarero', 'Mesero o camarero'))
+        c.execute("INSERT INTO roles (nombre_rol, descripcion) VALUES (?, ?)", ('Hostess', 'Recepcionista de restaurante'))
 
         # Departamentos
         deptos = [('05', 'ANTIOQUIA'), ('08', 'ATLÁNTICO'), ('13', 'BOLÍVAR')]

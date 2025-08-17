@@ -224,4 +224,65 @@ def crear_o_actualizar_reserva(datos: dict, reserva_id: int | None = None):
 def crear_o_actualizar_huesped(datos: dict, huesped_id: int | None = None):
     return _crear_o_actualizar_generico("hotel_huespedes", "id_huesped", datos, huesped_id)
 
+# --- Gestión de Restaurantes (RAT) ---
+def listar_mesas_por_empresa(empresa_id: int):
+    try:
+        with get_db_connection() as conn:
+            mesas = conn.execute("SELECT * FROM restaurante_mesas WHERE id_empresa = ?", (empresa_id,)).fetchall()
+            return [dict(row) for row in mesas]
+    except Exception as e:
+        logger.error(f"Error en listar_mesas_por_empresa: {e}")
+        return []
+
+def crear_o_actualizar_mesa(datos: dict, mesa_id: int | None = None):
+    return _crear_o_actualizar_generico("restaurante_mesas", "id_mesa", datos, mesa_id)
+
+def listar_menu_por_empresa(empresa_id: int):
+    try:
+        with get_db_connection() as conn:
+            menu = conn.execute("SELECT * FROM restaurante_menu_productos WHERE id_empresa = ?", (empresa_id,)).fetchall()
+            return [dict(row) for row in menu]
+    except Exception as e:
+        logger.error(f"Error en listar_menu_por_empresa: {e}")
+        return []
+
+def crear_o_actualizar_producto_menu(datos: dict, producto_id: int | None = None):
+    return _crear_o_actualizar_generico("restaurante_menu_productos", "id_producto", datos, producto_id)
+
+def crear_pedido(datos: dict):
+    return _crear_o_actualizar_generico("restaurante_pedidos", "id_pedido", datos, None)
+
+def agregar_item_pedido(datos: dict):
+    return _crear_o_actualizar_generico("restaurante_pedidos_items", "id_pedido_item", datos, None)
+
+def listar_pedidos_abiertos_por_empresa(empresa_id: int):
+    query = """
+        SELECT p.*, m.nombre_mesa
+        FROM restaurante_pedidos p
+        JOIN restaurante_mesas m ON p.id_mesa = m.id_mesa
+        WHERE m.id_empresa = ? AND p.estado != 'Cerrado'
+    """
+    try:
+        with get_db_connection() as conn:
+            pedidos = conn.execute(query, (empresa_id,)).fetchall()
+            return [dict(row) for row in pedidos]
+    except Exception as e:
+        logger.error(f"Error en listar_pedidos_abiertos_por_empresa: {e}")
+        return []
+
+def listar_items_por_pedido(pedido_id: int):
+    query = """
+        SELECT i.*, p.nombre_producto
+        FROM restaurante_pedidos_items i
+        JOIN restaurante_menu_productos p ON i.id_producto = p.id_producto
+        WHERE i.id_pedido = ?
+    """
+    try:
+        with get_db_connection() as conn:
+            items = conn.execute(query, (pedido_id,)).fetchall()
+            return [dict(row) for row in items]
+    except Exception as e:
+        logger.error(f"Error en listar_items_por_pedido: {e}")
+        return []
+
 # ... etc ...
