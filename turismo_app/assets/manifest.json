@@ -1,0 +1,21 @@
+{
+    "name": "Sistema de Gestión Turística Territorial",
+    "short_name": "TurismoApp",
+    "description": "Una aplicación para la gestión integrada del turismo.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#00695C",
+    "icons": [
+        {
+            "src": "icons/logo_app_login_192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/logo_app_login_512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

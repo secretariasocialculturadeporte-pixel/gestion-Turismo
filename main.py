@@ -209,7 +209,20 @@ def main(page: ft.Page):
 
 # --- Punto de Entrada para Ejecutar la App ---
 if __name__ == "__main__":
+    import flet as ft
+
     ft.app(
         target=main,
-        assets_dir="turismo_app/assets" # Servir archivos desde la carpeta de assets
+        assets_dir="turismo_app/assets"
+        # PWA features commented out to isolate the import errors
+        # web_app_manifest=ft.WebAppManifest(
+        #     name="TurismoApp",
+        #     short_name="TurismoApp",
+        #     description="Sistema Integrado de Gestión Turística Territorial",
+        #     icons=[
+        #         ft.WebAppManifestIcon("icons/logo_app_login_192.png", sizes="192x192"),
+        #         ft.WebAppManifestIcon("icons/logo_app_login_512.png", sizes="512x512"),
+        #     ]
+        # ),
+        # service_worker_url="/sw.js"
     )

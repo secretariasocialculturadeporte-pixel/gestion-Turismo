@@ -1,4 +1,5 @@
 flet
 langchain
+langchain-community
 langgraph
 langsmith
