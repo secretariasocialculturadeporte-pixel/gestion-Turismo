@@ -173,6 +173,16 @@ def obtener_resumen_clientes_por_empresa(empresa_id: int):
 # ... y así para el resto de funciones ...
 def listar_atractivos_admin_paginado(f, o, l, off): return [], 0
 def crear_o_actualizar_atractivo(d, id=None): return 1
+
+def obtener_atractivo_por_id(atractivo_id: int):
+    try:
+        with get_db_connection() as conn:
+            atractivo = conn.execute("SELECT * FROM atractivos_turisticos WHERE id_atractivo = ?", (atractivo_id,)).fetchone()
+            return dict(atractivo) if atractivo else None
+    except Exception as e:
+        logger.error(f"Error en obtener_atractivo_por_id: {e}")
+        return None
+
 def listar_vacantes_admin_paginado(f, o, l, off): return [], 0
 def crear_o_actualizar_vacante(d, id=None): return 1
 # ... etc ...
