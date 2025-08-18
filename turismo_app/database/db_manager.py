@@ -420,4 +420,20 @@ def listar_recursos_por_empresa(empresa_id: int):
         logger.error(f"Error en listar_recursos_por_empresa: {e}")
         return []
 
+def listar_recursos_por_tipo_y_ciudad(tipo: str, ciudad: str, capacidad: int):
+    query = """
+        SELECT r.*
+        FROM recursos_reservables r
+        JOIN empresas_prestadores_turisticos e ON r.id_empresa = e.id_empresa
+        JOIN municipios m ON e.codigo_municipio = m.codigo_municipio
+        WHERE r.tipo_recurso = ? AND m.nombre_municipio LIKE ? AND r.capacidad >= ?
+    """
+    try:
+        with get_db_connection() as conn:
+            recursos = conn.execute(query, (tipo, f"%{ciudad}%", capacidad)).fetchall()
+            return [dict(row) for row in recursos]
+    except Exception as e:
+        logger.error(f"Error en listar_recursos_por_tipo_y_ciudad: {e}")
+        return []
+
 # ... etc ...
