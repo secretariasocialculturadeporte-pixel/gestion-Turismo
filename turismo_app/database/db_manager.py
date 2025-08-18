@@ -436,4 +436,7 @@ def listar_recursos_por_tipo_y_ciudad(tipo: str, ciudad: str, capacidad: int):
         logger.error(f"Error en listar_recursos_por_tipo_y_ciudad: {e}")
         return []
 
+def crear_o_actualizar_reserva(datos: dict, reserva_id: int | None = None):
+    return _crear_o_actualizar_generico("reservas", "id_reserva", datos, reserva_id)
+
 # ... etc ...
