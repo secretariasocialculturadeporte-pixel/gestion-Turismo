@@ -77,6 +77,16 @@ class EmpresaDashboardView:
                             ft.icons.INVENTORY,
                             "/empresa/inventario"
                         ),
+                        self._crear_acceso_directo(
+                            "Calendario de Reservas",
+                            ft.icons.CALENDAR_VIEW_MONTH,
+                            "/empresa/calendario"
+                        ),
+                        self._crear_acceso_directo(
+                            "Gestionar Recursos",
+                            ft.icons.SETTINGS,
+                            "/empresa/recursos"
+                        ),
                     ] + self._crear_accesos_directos_hotel(),
                     wrap=True,
                     spacing=20,

@@ -13,9 +13,6 @@ from turismo_app.views.chatbot_view import ChatbotView
 from turismo_app.views.empresa.empresa_dashboard_view import EmpresaDashboardView
 from turismo_app.views.empresa.empresa_gestion_productos_view import EmpresaGestionProductosView
 from turismo_app.views.empresa.empresa_registro_clientes_view import EmpresaRegistroClientesView
-from turismo_app.views.empresa.hotel_gestion_habitaciones_view import HotelGestionHabitacionesView
-from turismo_app.views.empresa.hotel_gestion_reservas_view import HotelGestionReservasView
-from turismo_app.views.empresa.hotel_calendario_ocupacion_view import HotelCalendarioOcupacionView
 from turismo_app.views.empresa.restaurante_admin_panel_view import RestauranteAdminPanelView
 from turismo_app.views.empresa.restaurante_gestion_menu_view import RestauranteGestionMenuView
 from turismo_app.views.empresa.restaurante_gestion_mesas_view import RestauranteGestionMesasView
@@ -24,10 +21,12 @@ from turismo_app.views.empresa.restaurante_kds_view import RestauranteKDSView
 from turismo_app.views.empresa.restaurante_recepcion_view import RestauranteRecepcionView
 from turismo_app.views.empresa.agencia_gestion_paquetes_view import AgenciaGestionPaquetesView
 from turismo_app.views.empresa.agencia_gestion_reservas_view import AgenciaGestionReservasView
+from turismo_app.views.empresa.gestion_recursos_view import GestionRecursosView
 from turismo_app.views.guia.guia_perfil_view import GuiaPerfilView
 from turismo_app.views.guia.guia_reservas_view import GuiaReservasView
 from turismo_app.views.ciudadano.ciudadano_guias_view import CiudadanoGuiasView
 from turismo_app.views.empresa.gestion_inventario_view import GestionInventarioView
+from turismo_app.views.shared.calendario_disponibilidad_view import CalendarioDisponibilidadView
 
 
 # --- Configuración del Logging ---
@@ -58,6 +57,8 @@ ROUTE_RESTAURANTE_RECEPCION = "/empresa/restaurante/recepcion"
 ROUTE_AGENCIA_PAQUETES = "/empresa/agencia/paquetes"
 ROUTE_AGENCIA_RESERVAS = "/empresa/agencia/reservas"
 ROUTE_EMPRESA_INVENTARIO = "/empresa/inventario"
+ROUTE_EMPRESA_CALENDARIO = "/empresa/calendario"
+ROUTE_EMPRESA_RECURSOS = "/empresa/recursos"
 ROUTE_GUIA_PERFIL = "/guia/perfil"
 ROUTE_GUIA_RESERVAS = "/guia/reservas"
 ROUTE_CIUDADANO_GUIAS = "/ciudadano/guias"
@@ -234,9 +235,7 @@ def main(page: ft.Page):
                 ROUTE_EMPRESA_DASHBOARD: EmpresaDashboardView,
                 ROUTE_EMPRESA_PRODUCTOS: EmpresaGestionProductosView,
                 ROUTE_EMPRESA_CLIENTES: EmpresaRegistroClientesView,
-                ROUTE_HOTEL_HABITACIONES: HotelGestionHabitacionesView,
-                ROUTE_HOTEL_RESERVAS: HotelGestionReservasView,
-                ROUTE_HOTEL_CALENDARIO: HotelCalendarioOcupacionView,
+                ROUTE_EMPRESA_RECURSOS: GestionRecursosView,
                 ROUTE_RESTAURANTE_ADMIN: RestauranteAdminPanelView,
                 ROUTE_RESTAURANTE_MENU: RestauranteGestionMenuView,
                 ROUTE_RESTAURANTE_MESAS: RestauranteGestionMesasView,
@@ -246,6 +245,7 @@ def main(page: ft.Page):
                 ROUTE_AGENCIA_PAQUETES: AgenciaGestionPaquetesView,
                 ROUTE_AGENCIA_RESERVAS: AgenciaGestionReservasView,
                 ROUTE_EMPRESA_INVENTARIO: GestionInventarioView,
+                ROUTE_EMPRESA_CALENDARIO: CalendarioDisponibilidadView,
                 ROUTE_GUIA_PERFIL: GuiaPerfilView,
                 ROUTE_GUIA_RESERVAS: GuiaReservasView,
                 ROUTE_CIUDADANO_GUIAS: CiudadanoGuiasView,

@@ -186,44 +186,6 @@ def obtener_atractivo_por_id(atractivo_id: int):
 def listar_vacantes_admin_paginado(f, o, l, off): return [], 0
 def crear_o_actualizar_vacante(d, id=None): return 1
 
-# --- Gestión de Hoteles (RAT) ---
-def listar_habitaciones_por_empresa(empresa_id: int):
-    try:
-        with get_db_connection() as conn:
-            habitaciones = conn.execute("SELECT * FROM hotel_habitaciones WHERE id_empresa = ?", (empresa_id,)).fetchall()
-            return [dict(row) for row in habitaciones]
-    except Exception as e:
-        logger.error(f"Error en listar_habitaciones_por_empresa: {e}")
-        return []
-
-def crear_o_actualizar_habitacion(datos: dict, habitacion_id: int | None = None):
-    return _crear_o_actualizar_generico("hotel_habitaciones", "id_habitacion", datos, habitacion_id)
-
-def borrar_habitacion(habitacion_id: int, audit_user_id: int | None = None):
-    try:
-        with get_db_connection() as conn:
-            conn.execute("DELETE FROM hotel_habitaciones WHERE id_habitacion = ?", (habitacion_id,))
-            log_audit(audit_user_id, "DELETE_HABITACION", f"ID: {habitacion_id}")
-            return True
-    except Exception as e:
-        logger.error(f"Error en borrar_habitacion: {e}")
-        return False
-
-def listar_reservas_por_habitacion(habitacion_id: int):
-    try:
-        with get_db_connection() as conn:
-            reservas = conn.execute("SELECT * FROM hotel_reservas WHERE id_habitacion = ?", (habitacion_id,)).fetchall()
-            return [dict(row) for row in reservas]
-    except Exception as e:
-        logger.error(f"Error en listar_reservas_por_habitacion: {e}")
-        return []
-
-def crear_o_actualizar_reserva(datos: dict, reserva_id: int | None = None):
-    return _crear_o_actualizar_generico("hotel_reservas", "id_reserva", datos, reserva_id)
-
-def crear_o_actualizar_huesped(datos: dict, huesped_id: int | None = None):
-    return _crear_o_actualizar_generico("hotel_huespedes", "id_huesped", datos, huesped_id)
-
 # --- Gestión de Restaurantes (RAT) ---
 def listar_mesas_por_empresa(empresa_id: int):
     try:
