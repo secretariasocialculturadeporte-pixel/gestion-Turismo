@@ -25,7 +25,7 @@ from turismo_app.views.empresa.gestion_recursos_view import GestionRecursosView
 from turismo_app.views.guia.guia_perfil_view import GuiaPerfilView
 from turismo_app.views.guia.guia_reservas_view import GuiaReservasView
 from turismo_app.views.ciudadano.ciudadano_guias_view import CiudadanoGuiasView
-from turismo_app.views.empresa.gestion_inventario_view import GestionInventarioView
+from turismo_app.views.empresa.gestion_costos_view import GestionCostosView
 from turismo_app.views.shared.calendario_disponibilidad_view import CalendarioDisponibilidadView
 
 
@@ -59,6 +59,7 @@ ROUTE_AGENCIA_RESERVAS = "/empresa/agencia/reservas"
 ROUTE_EMPRESA_INVENTARIO = "/empresa/inventario"
 ROUTE_EMPRESA_CALENDARIO = "/empresa/calendario"
 ROUTE_EMPRESA_RECURSOS = "/empresa/recursos"
+ROUTE_EMPRESA_COSTOS = "/empresa/costos"
 ROUTE_GUIA_PERFIL = "/guia/perfil"
 ROUTE_GUIA_RESERVAS = "/guia/reservas"
 ROUTE_CIUDADANO_GUIAS = "/ciudadano/guias"
@@ -244,7 +245,7 @@ def main(page: ft.Page):
                 ROUTE_RESTAURANTE_RECEPCION: RestauranteRecepcionView,
                 ROUTE_AGENCIA_PAQUETES: AgenciaGestionPaquetesView,
                 ROUTE_AGENCIA_RESERVAS: AgenciaGestionReservasView,
-                ROUTE_EMPRESA_INVENTARIO: GestionInventarioView,
+                ROUTE_EMPRESA_COSTOS: GestionCostosView,
                 ROUTE_EMPRESA_CALENDARIO: CalendarioDisponibilidadView,
                 ROUTE_GUIA_PERFIL: GuiaPerfilView,
                 ROUTE_GUIA_RESERVAS: GuiaReservasView,

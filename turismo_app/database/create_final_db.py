@@ -268,6 +268,18 @@ def setup_database():
             FOREIGN KEY (id_reserva) REFERENCES reservas (id_reserva)
         );"""
 
+        sql_create_costos_operativos_table = """
+        CREATE TABLE IF NOT EXISTS costos_operativos (
+            id_costo INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_empresa INTEGER NOT NULL,
+            nombre_costo TEXT NOT NULL,
+            tipo_costo TEXT NOT NULL,
+            es_variable INTEGER NOT NULL,
+            unidad_medida TEXT,
+            valor_costo REAL NOT NULL,
+            FOREIGN KEY (id_empresa) REFERENCES empresas_prestadores_turisticos (id_empresa)
+        );"""
+
         # --- Tablas para el Módulo de Restaurantes (RAT) ---
         sql_create_restaurante_mesas_table = """
         CREATE TABLE IF NOT EXISTS restaurante_mesas (
@@ -426,6 +438,7 @@ def setup_database():
         create_table(conn, sql_create_reservas_table)
         create_table(conn, sql_create_promociones_table)
         create_table(conn, sql_create_pagos_table)
+        create_table(conn, sql_create_costos_operativos_table)
         create_table(conn, sql_create_restaurante_mesas_table)
         create_table(conn, sql_create_restaurante_menu_productos_table)
         create_table(conn, sql_create_restaurante_pedidos_table)

@@ -353,4 +353,62 @@ def listar_items_individuales_por_tipo(tipo_item_id: int):
         logger.error(f"Error en listar_items_individuales_por_tipo: {e}")
         return []
 
+# --- Gestión de Precios Dinámicos ---
+def crear_o_actualizar_regla_precio(datos: dict, regla_id: int | None = None):
+    return _crear_o_actualizar_generico("reglas_precios", "id_regla", datos, regla_id)
+
+def listar_reglas_precios_por_empresa(empresa_id: int):
+    try:
+        with get_db_connection() as conn:
+            reglas = conn.execute("SELECT * FROM reglas_precios WHERE id_empresa = ?", (empresa_id,)).fetchall()
+            return [dict(row) for row in reglas]
+    except Exception as e:
+        logger.error(f"Error en listar_reglas_precios_por_empresa: {e}")
+        return []
+
+def calcular_precio_final(recurso_id: int, fecha_inicio: str, fecha_fin: str):
+    # Lógica para obtener el precio base del recurso y aplicar las reglas de precios
+    # Esta es una simplificación. En una app real, esta lógica sería más compleja.
+    recurso = obtener_recurso_por_id(recurso_id) # Asume que esta función existe
+    precio_base = recurso.get("precio_base", 0)
+
+    # Aquí se aplicarían las reglas de precios
+
+    return precio_base
+
+def obtener_recurso_por_id(recurso_id: int):
+    try:
+        with get_db_connection() as conn:
+            recurso = conn.execute("SELECT * FROM recursos_reservables WHERE id_recurso = ?", (recurso_id,)).fetchone()
+            return dict(recurso) if recurso else None
+    except Exception as e:
+        logger.error(f"Error en obtener_recurso_por_id: {e}")
+        return None
+
+# --- Gestión de Costos ---
+def crear_o_actualizar_costo(datos: dict, costo_id: int | None = None):
+    return _crear_o_actualizar_generico("costos_operativos", "id_costo", datos, costo_id)
+
+def listar_costos_por_empresa(empresa_id: int):
+    try:
+        with get_db_connection() as conn:
+            costos = conn.execute("SELECT * FROM costos_operativos WHERE id_empresa = ?", (empresa_id,)).fetchall()
+            return [dict(row) for row in costos]
+    except Exception as e:
+        logger.error(f"Error en listar_costos_por_empresa: {e}")
+        return []
+
+# --- Gestión de Recursos Reservables ---
+def crear_o_actualizar_recurso(datos: dict, recurso_id: int | None = None):
+    return _crear_o_actualizar_generico("recursos_reservables", "id_recurso", datos, recurso_id)
+
+def listar_recursos_por_empresa(empresa_id: int):
+    try:
+        with get_db_connection() as conn:
+            recursos = conn.execute("SELECT * FROM recursos_reservables WHERE id_empresa = ?", (empresa_id,)).fetchall()
+            return [dict(row) for row in recursos]
+    except Exception as e:
+        logger.error(f"Error en listar_recursos_por_empresa: {e}")
+        return []
+
 # ... etc ...
