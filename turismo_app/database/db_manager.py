@@ -367,14 +367,23 @@ def listar_reglas_precios_por_empresa(empresa_id: int):
         return []
 
 def calcular_precio_final(recurso_id: int, fecha_inicio: str, fecha_fin: str):
-    # Lógica para obtener el precio base del recurso y aplicar las reglas de precios
-    # Esta es una simplificación. En una app real, esta lógica sería más compleja.
-    recurso = obtener_recurso_por_id(recurso_id) # Asume que esta función existe
-    precio_base = recurso.get("precio_base", 0)
+    recurso = obtener_recurso_por_id(recurso_id)
+    if not recurso:
+        return 0
 
-    # Aquí se aplicarían las reglas de precios
+    precio_final = recurso.get("precio_base", 0)
+    reglas = listar_reglas_precios_por_empresa(recurso["id_empresa"])
 
-    return precio_base
+    # Lógica de aplicación de reglas (simplificada)
+    for regla in reglas:
+        if regla["tipo_regla"] == "temporada":
+            if regla["fecha_inicio"] <= fecha_inicio and regla["fecha_fin"] >= fecha_fin:
+                precio_final *= regla["valor_ajuste"]
+        elif regla["tipo_regla"] == "dia_semana":
+            # Lógica para aplicar reglas de días de la semana
+            pass
+
+    return precio_final
 
 def obtener_recurso_por_id(recurso_id: int):
     try:

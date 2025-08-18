@@ -87,6 +87,11 @@ class EmpresaDashboardView:
                             ft.icons.SETTINGS,
                             "/empresa/recursos"
                         ),
+                        self._crear_acceso_directo(
+                            "Reglas de Precios",
+                            ft.icons.PRICE_CHANGE,
+                            "/empresa/precios"
+                        ),
                     ] + self._crear_accesos_directos_hotel(),
                     wrap=True,
                     spacing=20,

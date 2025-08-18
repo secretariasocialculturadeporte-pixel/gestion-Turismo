@@ -268,15 +268,16 @@ def setup_database():
             FOREIGN KEY (id_reserva) REFERENCES reservas (id_reserva)
         );"""
 
-        sql_create_costos_operativos_table = """
-        CREATE TABLE IF NOT EXISTS costos_operativos (
-            id_costo INTEGER PRIMARY KEY AUTOINCREMENT,
+        sql_create_reglas_precios_table = """
+        CREATE TABLE IF NOT EXISTS reglas_precios (
+            id_regla INTEGER PRIMARY KEY AUTOINCREMENT,
             id_empresa INTEGER NOT NULL,
-            nombre_costo TEXT NOT NULL,
-            tipo_costo TEXT NOT NULL,
-            es_variable INTEGER NOT NULL,
-            unidad_medida TEXT,
-            valor_costo REAL NOT NULL,
+            nombre_regla TEXT NOT NULL,
+            tipo_regla TEXT NOT NULL, -- "temporada", "dia_semana", "demanda"
+            valor_ajuste REAL NOT NULL, -- Puede ser un porcentaje (ej. 1.2 para +20%) o un monto fijo
+            fecha_inicio DATE,
+            fecha_fin DATE,
+            dias_semana TEXT, -- "1,2,3,4,5" para L-V
             FOREIGN KEY (id_empresa) REFERENCES empresas_prestadores_turisticos (id_empresa)
         );"""
 
@@ -438,7 +439,7 @@ def setup_database():
         create_table(conn, sql_create_reservas_table)
         create_table(conn, sql_create_promociones_table)
         create_table(conn, sql_create_pagos_table)
-        create_table(conn, sql_create_costos_operativos_table)
+        create_table(conn, sql_create_reglas_precios_table)
         create_table(conn, sql_create_restaurante_mesas_table)
         create_table(conn, sql_create_restaurante_menu_productos_table)
         create_table(conn, sql_create_restaurante_pedidos_table)
