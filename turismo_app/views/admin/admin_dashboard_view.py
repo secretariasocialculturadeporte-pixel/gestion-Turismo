@@ -57,4 +57,6 @@ class AdminDashboardView:
         if self.user_rol == "SuperAdmin":
             accesos.append({"titulo": "Usuarios", "icono": ft.icons.PEOPLE, "ruta": "/admin/usuarios"})
 
+        accesos.append({"titulo": "Gestión de Agentes", "icono": ft.icons.SMART_TOY, "ruta": "/admin/agentes"})
+
         self.accesos_directos_grid.controls = [self._crear_acceso_directo_card(**acc) for acc in accesos]

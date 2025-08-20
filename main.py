@@ -9,6 +9,7 @@ from turismo_app.views.ciudadano.ciudadano_turismo_view import CiudadanoTurismoV
 from turismo_app.views.ciudadano.ciudadano_empleo_view import CiudadanoEmpleoView
 from turismo_app.views.ciudadano.ciudadano_feedback_view import CiudadanoFeedbackView
 from turismo_app.views.admin.gestion_contenido.admin_empresas_view import AdminEmpresasView
+from turismo_app.views.admin.gestion_agentes_view import GestionAgentesView
 from turismo_app.views.chatbot_view import ChatbotView
 from turismo_app.views.empresa.empresa_dashboard_view import EmpresaDashboardView
 from turismo_app.views.empresa.empresa_gestion_productos_view import EmpresaGestionProductosView
@@ -41,6 +42,7 @@ ROUTE_HOME = "/"
 ROUTE_LOGIN = "/auth/login"
 ROUTE_ADMIN_DASHBOARD = "/admin/dashboard"
 ROUTE_ADMIN_EMPRESAS = "/admin/empresas"
+ROUTE_ADMIN_AGENTES = "/admin/agentes"
 ROUTE_CIUDADANO_TURISMO = "/ciudadano/turismo"
 ROUTE_CIUDADANO_EMPLEO = "/ciudadano/empleo"
 ROUTE_CIUDADANO_FEEDBACK = "/ciudadano/feedback"
@@ -235,6 +237,7 @@ def main(page: ft.Page):
                 ROUTE_HOME: HomeView,
                 ROUTE_ADMIN_DASHBOARD: AdminDashboardView,
                 ROUTE_ADMIN_EMPRESAS: AdminEmpresasView,
+            ROUTE_ADMIN_AGENTES: GestionAgentesView,
                 ROUTE_CIUDADANO_TURISMO: CiudadanoTurismoView,
                 ROUTE_CIUDADANO_EMPLEO: CiudadanoEmpleoView,
                 ROUTE_CIUDADANO_FEEDBACK: CiudadanoFeedbackView,

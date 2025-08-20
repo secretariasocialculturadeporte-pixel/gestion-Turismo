@@ -1,5 +1,6 @@
 flet
 langchain
 langchain-community
+langchain-openai
 langgraph
 langsmith
