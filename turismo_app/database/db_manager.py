@@ -305,9 +305,15 @@ def crear_o_actualizar_mesa(datos: dict, mesa_id: int | None = None):
     return _crear_o_actualizar_generico("restaurante_mesas", "id_mesa", datos, mesa_id)
 
 def listar_menu_por_empresa(empresa_id: int):
+    query = """
+        SELECT p.*, c.nombre_categoria
+        FROM restaurante_menu_productos p
+        LEFT JOIN categorias c ON p.id_categoria = c.id_categoria
+        WHERE p.id_empresa = ?
+    """
     try:
         with get_db_connection() as conn:
-            menu = conn.execute("SELECT * FROM restaurante_menu_productos WHERE id_empresa = ?", (empresa_id,)).fetchall()
+            menu = conn.execute(query, (empresa_id,)).fetchall()
             return [dict(row) for row in menu]
     except Exception as e:
         logger.error(f"Error en listar_menu_por_empresa: {e}")
@@ -316,28 +322,70 @@ def listar_menu_por_empresa(empresa_id: int):
 def crear_o_actualizar_producto_menu(datos: dict, producto_id: int | None = None):
     return _crear_o_actualizar_generico("restaurante_menu_productos", "id_producto", datos, producto_id)
 
-def crear_pedido(datos: dict):
-    return _crear_o_actualizar_generico("restaurante_pedidos", "id_pedido", datos, None)
+def crear_pedido_completo(datos_pedido: dict, items_pedido: list[dict], audit_user_id: int | None) -> int | None:
+    """
+    Crea un pedido completo con sus items y estado inicial en una transacción.
+    """
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("BEGIN")
+
+            # 1. Crear el pedido principal
+            sql_pedido = """
+            INSERT INTO restaurante_pedidos (id_empresa, id_mesero, tipo_orden, id_mesa, cliente_nombre, cliente_direccion, cliente_telefono, estado, total)
+            VALUES (:id_empresa, :id_mesero, :tipo_orden, :id_mesa, :cliente_nombre, :cliente_direccion, :cliente_telefono, 'Recibido', :total)
+            """
+            cursor.execute(sql_pedido, datos_pedido)
+            pedido_id = cursor.lastrowid
+
+            # 2. Insertar los items del pedido
+            # Asumiendo que items_pedido es una lista de dicts con 'id_producto', 'cantidad', 'precio'
+            sql_items = """
+            INSERT INTO restaurante_pedidos_items (id_pedido, id_producto, cantidad, precio_unitario, estado)
+            VALUES (?, ?, ?, ?, 'Pedido')
+            """
+            items_to_insert = [(pedido_id, item['id_producto'], item['cantidad'], item['precio']) for item in items_pedido]
+            cursor.executemany(sql_items, items_to_insert)
+
+            # 3. Insertar el estado inicial en el historial
+            sql_historial = "INSERT INTO historial_estados_pedido (id_pedido, estado, registrado_por_usuario_id) VALUES (?, 'Recibido', ?)"
+            cursor.execute(sql_historial, (pedido_id, audit_user_id))
+
+            cursor.execute("COMMIT")
+            log_audit(audit_user_id, "CREATE_PEDIDO_COMPLETO", f"ID Pedido: {pedido_id}")
+            return pedido_id
+    except Exception as e:
+        logger.error(f"Error en crear_pedido_completo: {e}")
+        conn.rollback()
+        return None
 
 def agregar_item_pedido(datos: dict):
     return _crear_o_actualizar_generico("restaurante_pedidos_items", "id_pedido_item", datos, None)
 
-def listar_pedidos_abiertos_por_empresa(empresa_id: int):
+def get_pedidos_abiertos_por_empresa(empresa_id: int) -> list[dict]:
+    """
+    Obtiene todos los pedidos abiertos (no cerrados o cancelados) para una empresa.
+    """
     query = """
         SELECT p.*, m.nombre_mesa
         FROM restaurante_pedidos p
-        JOIN restaurante_mesas m ON p.id_mesa = m.id_mesa
-        WHERE m.id_empresa = ? AND p.estado != 'Cerrado'
+        LEFT JOIN restaurante_mesas m ON p.id_mesa = m.id_mesa
+        WHERE p.id_empresa = ? AND p.estado NOT IN ('Cerrado', 'Cancelado')
+        ORDER BY p.fecha_apertura ASC
     """
     try:
         with get_db_connection() as conn:
             pedidos = conn.execute(query, (empresa_id,)).fetchall()
             return [dict(row) for row in pedidos]
     except Exception as e:
-        logger.error(f"Error en listar_pedidos_abiertos_por_empresa: {e}")
+        logger.error(f"Error en get_pedidos_abiertos_por_empresa: {e}")
         return []
 
-def listar_items_por_pedido(pedido_id: int):
+def get_items_por_pedido(pedido_id: int) -> list[dict]:
+    """
+    Obtiene todos los items de un pedido.
+    """
     query = """
         SELECT i.*, p.nombre_producto
         FROM restaurante_pedidos_items i
@@ -349,8 +397,32 @@ def listar_items_por_pedido(pedido_id: int):
             items = conn.execute(query, (pedido_id,)).fetchall()
             return [dict(row) for row in items]
     except Exception as e:
-        logger.error(f"Error en listar_items_por_pedido: {e}")
+        logger.error(f"Error en get_items_por_pedido: {e}")
         return []
+
+def actualizar_estado_pedido(pedido_id: int, nuevo_estado: str, audit_user_id: int | None) -> bool:
+    """
+    Actualiza el estado de un pedido y lo registra en el historial.
+    """
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("BEGIN")
+
+            # Actualizar estado en la tabla principal
+            cursor.execute("UPDATE restaurante_pedidos SET estado = ? WHERE id_pedido = ?", (nuevo_estado, pedido_id))
+
+            # Registrar en el historial
+            sql_historial = "INSERT INTO historial_estados_pedido (id_pedido, estado, registrado_por_usuario_id) VALUES (?, ?, ?)"
+            cursor.execute(sql_historial, (pedido_id, nuevo_estado, audit_user_id))
+
+            cursor.execute("COMMIT")
+            log_audit(audit_user_id, "UPDATE_ESTADO_PEDIDO", f"ID Pedido: {pedido_id}, Nuevo Estado: {nuevo_estado}")
+            return True
+    except Exception as e:
+        logger.error(f"Error en actualizar_estado_pedido: {e}")
+        conn.rollback()
+        return False
 
 # --- Gestión de Agencias de Viajes (RAT) ---
 def listar_paquetes_por_agencia(empresa_id: int):

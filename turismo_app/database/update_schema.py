@@ -20,47 +20,108 @@ def create_table(conn, create_table_sql):
         print(e)
 
 def update_schema():
-    """Añade las nuevas tablas de categorías a la base de datos existente."""
+    """Añade las nuevas tablas y modifica las existentes para el gestor de comandas."""
     conn = get_db_connection()
+    cursor = conn.cursor()
 
     if conn is not None:
-        print("Conexión exitosa. Actualizando esquema...")
+        print("Conexión exitosa. Actualizando esquema para el gestor de comandas...")
 
-        # --- Tabla para Categorías Jerárquicas de Empresas ---
-        sql_create_categorias_table = """
-        CREATE TABLE IF NOT EXISTS categorias (
-            id_categoria INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre_categoria TEXT NOT NULL,
-            descripcion TEXT,
-            id_categoria_padre INTEGER,
-            FOREIGN KEY (id_categoria_padre) REFERENCES categorias (id_categoria)
-        );"""
+        try:
+            # Iniciar transacción
+            cursor.execute("BEGIN")
 
-        # --- Tabla de Enlace (Muchos a Muchos) entre Empresas y Categorías ---
-        sql_create_empresa_categorias_table = """
-        CREATE TABLE IF NOT EXISTS empresa_categorias (
-            id_empresa INTEGER NOT NULL,
-            id_categoria INTEGER NOT NULL,
-            PRIMARY KEY (id_empresa, id_categoria),
-            FOREIGN KEY (id_empresa) REFERENCES empresas_prestadores_turisticos (id_empresa) ON DELETE CASCADE,
-            FOREIGN KEY (id_categoria) REFERENCES categorias (id_categoria) ON DELETE CASCADE
-        );"""
+            # 1. Reconstruir la tabla restaurante_pedidos para hacer id_mesa nullable y añadir nuevos campos
+            print("Reconstruyendo la tabla 'restaurante_pedidos'...")
 
-        # --- Índice para la tabla de categorías para búsquedas más rápidas ---
-        sql_create_categorias_index = "CREATE INDEX IF NOT EXISTS idx_id_categoria_padre ON categorias (id_categoria_padre);"
+            # Renombrar la tabla vieja si existe
+            cursor.execute("ALTER TABLE restaurante_pedidos RENAME TO restaurante_pedidos_old;")
 
-        create_table(conn, sql_create_categorias_table)
-        print("Tabla 'categorias' creada o ya existente.")
+            # Crear la nueva tabla con la estructura deseada
+            sql_create_new_pedidos_table = """
+            CREATE TABLE restaurante_pedidos (
+                id_pedido INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_mesa INTEGER,
+                id_mesero INTEGER NOT NULL,
+                estado TEXT NOT NULL,
+                total REAL,
+                fecha_apertura TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                fecha_cierre TIMESTAMP,
+                tipo_orden TEXT NOT NULL DEFAULT 'Mesa',
+                cliente_nombre TEXT,
+                cliente_direccion TEXT,
+                cliente_telefono TEXT,
+                FOREIGN KEY (id_mesa) REFERENCES restaurante_mesas (id_mesa),
+                FOREIGN KEY (id_mesero) REFERENCES usuarios (id_usuario)
+            );"""
+            create_table(conn, sql_create_new_pedidos_table)
 
-        create_table(conn, sql_create_empresa_categorias_table)
-        print("Tabla 'empresa_categorias' creada o ya existente.")
+            # Copiar los datos de la tabla vieja a la nueva
+            # Se asume que todos los pedidos existentes son de tipo 'Mesa'
+            sql_copy_data = """
+            INSERT INTO restaurante_pedidos (id_pedido, id_mesa, id_mesero, estado, total, fecha_apertura, fecha_cierre)
+            SELECT id_pedido, id_mesa, id_mesero, estado, total, fecha_apertura, fecha_cierre
+            FROM restaurante_pedidos_old;
+            """
+            cursor.execute(sql_copy_data)
 
-        create_table(conn, sql_create_categorias_index)
-        print("Índice en 'categorias' creado o ya existente.")
+            # Borrar la tabla vieja
+            cursor.execute("DROP TABLE restaurante_pedidos_old;")
+            print("Tabla 'restaurante_pedidos' reconstruida exitosamente.")
 
-        conn.commit()
-        conn.close()
-        print("Esquema actualizado y conexión cerrada.")
+            # 2. Crear la tabla para el historial de estados de pedidos
+            sql_create_historial_table = """
+            CREATE TABLE IF NOT EXISTS historial_estados_pedido (
+                id_historial INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_pedido INTEGER NOT NULL,
+                estado TEXT NOT NULL,
+                fecha_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                notas TEXT,
+                registrado_por_usuario_id INTEGER,
+                FOREIGN KEY (id_pedido) REFERENCES restaurante_pedidos (id_pedido) ON DELETE CASCADE,
+                FOREIGN KEY (registrado_por_usuario_id) REFERENCES usuarios (id_usuario)
+            );"""
+            create_table(conn, sql_create_historial_table)
+            print("Tabla 'historial_estados_pedido' creada o ya existente.")
+
+            # 3. Añadir columna de categoría a la tabla de productos de menú
+            try:
+                cursor.execute("ALTER TABLE restaurante_menu_productos ADD COLUMN id_categoria INTEGER REFERENCES categorias(id_categoria);")
+                print("Columna 'id_categoria' añadida a 'restaurante_menu_productos'.")
+            except sqlite3.OperationalError as e:
+                if "duplicate column name" in str(e):
+                    print("La columna 'id_categoria' ya existe en 'restaurante_menu_productos'.")
+                else:
+                    raise e
+
+            # 4. Añadir columna de empresa a la tabla de pedidos
+            try:
+                cursor.execute("ALTER TABLE restaurante_pedidos ADD COLUMN id_empresa INTEGER REFERENCES empresas_prestadores_turisticos(id_empresa);")
+                print("Columna 'id_empresa' añadida a 'restaurante_pedidos'.")
+            except sqlite3.OperationalError as e:
+                if "duplicate column name" in str(e):
+                    print("La columna 'id_empresa' ya existe en 'restaurante_pedidos'.")
+                else:
+                    raise e
+
+            # Commit de la transacción
+            conn.commit()
+            print("Esquema actualizado y conexión cerrada.")
+
+        except sqlite3.OperationalError as e:
+            # Esto puede pasar si el script ya se ejecutó.
+            # Si la tabla _old no existe, es probable que ya se haya migrado.
+            if "no such table: restaurante_pedidos_old" in str(e) or "no such table: restaurante_pedidos" in str(e):
+                 print("Parece que el esquema ya fue actualizado anteriormente. No se realizarán cambios.")
+                 conn.rollback()
+            else:
+                print(f"Error operacional durante la actualización del esquema: {e}")
+                conn.rollback()
+        except Exception as e:
+            print(f"Ocurrió un error inesperado: {e}")
+            conn.rollback()
+        finally:
+            conn.close()
     else:
         print("Error! No se pudo crear la conexión a la base de datos.")
 

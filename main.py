@@ -28,6 +28,8 @@ from turismo_app.views.ciudadano.ciudadano_guias_view import CiudadanoGuiasView
 from turismo_app.views.empresa.gestion_costos_view import GestionCostosView
 from turismo_app.views.empresa.gestion_reglas_precios_view import GestionReglasPreciosView
 from turismo_app.views.shared.calendario_disponibilidad_view import CalendarioDisponibilidadView
+from turismo_app.views.empresa.gestion_comandas_view import GestionComandasView
+from turismo_app.views.empresa.gestion_dashboard_view import GestionDashboardView
 
 
 # --- Configuración del Logging ---
@@ -62,6 +64,8 @@ ROUTE_EMPRESA_CALENDARIO = "/empresa/calendario"
 ROUTE_EMPRESA_RECURSOS = "/empresa/recursos"
 ROUTE_EMPRESA_COSTOS = "/empresa/costos"
 ROUTE_EMPRESA_PRECIOS = "/empresa/precios"
+ROUTE_EMPRESA_COMANDAS_CREAR = "/empresa/comandas/crear"
+ROUTE_EMPRESA_COMANDAS_DASHBOARD = "/empresa/comandas/dashboard"
 ROUTE_GUIA_PERFIL = "/guia/perfil"
 ROUTE_GUIA_RESERVAS = "/guia/reservas"
 ROUTE_CIUDADANO_GUIAS = "/ciudadano/guias"
@@ -250,6 +254,8 @@ def main(page: ft.Page):
                 ROUTE_EMPRESA_COSTOS: GestionCostosView,
                 ROUTE_EMPRESA_PRECIOS: GestionReglasPreciosView,
                 ROUTE_EMPRESA_CALENDARIO: CalendarioDisponibilidadView,
+                ROUTE_EMPRESA_COMANDAS_CREAR: GestionComandasView,
+                ROUTE_EMPRESA_COMANDAS_DASHBOARD: GestionDashboardView,
                 ROUTE_GUIA_PERFIL: GuiaPerfilView,
                 ROUTE_GUIA_RESERVAS: GuiaReservasView,
                 ROUTE_CIUDADANO_GUIAS: CiudadanoGuiasView,

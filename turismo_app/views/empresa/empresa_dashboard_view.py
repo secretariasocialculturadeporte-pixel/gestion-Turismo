@@ -92,7 +92,7 @@ class EmpresaDashboardView:
                             ft.icons.PRICE_CHANGE,
                             "/empresa/precios"
                         ),
-                    ] + self._crear_accesos_directos_hotel(),
+                    ] + self._crear_accesos_directos_hotel() + self._crear_accesos_directos_comandas(),
                     wrap=True,
                     spacing=20,
                     run_spacing=20
@@ -140,6 +140,23 @@ class EmpresaDashboardView:
                     "Gestionar Reservas",
                     ft.icons.BOOK_ONLINE,
                     "/empresa/agencia/reservas"
+                ),
+            ]
+        return []
+
+    def _crear_accesos_directos_comandas(self):
+        # Asumiendo que cualquier restaurante o bar puede tener un gestor de comandas
+        if self.empresa_info and self.empresa_info.get("tipo_prestador") == "RESTAURANTE_BAR":
+            return [
+                self._crear_acceso_directo(
+                    "Nueva Comanda",
+                    ft.icons.ADD_SHOPPING_CART,
+                    "/empresa/comandas/crear"
+                ),
+                self._crear_acceso_directo(
+                    "Dashboard de Comandas",
+                    ft.icons.DASHBOARD,
+                    "/empresa/comandas/dashboard"
                 ),
             ]
         return []
