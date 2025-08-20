@@ -39,8 +39,8 @@ def route_to_lieutenant(state: HotelCaptainState):
 async def lieutenant_node(state: HotelCaptainState) -> HotelCaptainState:
     mission = state["task_queue"].pop(0)
     print(f"--- 🔽 CAPITÁN (Hotel): Delegando a TTE. GESTION HOTEL -> '{mission.task_description}' ---")
-    # result = await gestion_hotel_agent.ainvoke(...)
-    state["completed_missions"].append({"lieutenant": "GestionHotel", "report": "Misión de hotel completada (simulado)."})
+    result = await gestion_hotel_agent.ainvoke({"captain_order": mission.task_description, "app_context": state.get("app_context")})
+    state["completed_missions"].append({"lieutenant": "GestionHotel", "report": result.get("final_report", "Misión de hotel completada.")})
     return state
 
 async def compile_final_report(state: HotelCaptainState) -> HotelCaptainState:

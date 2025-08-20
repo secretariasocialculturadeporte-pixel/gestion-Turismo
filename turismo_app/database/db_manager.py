@@ -99,6 +99,16 @@ def _crear_o_actualizar_generico(tabla: str, p_key: str, datos: dict, id_registr
 def listar_empresas_paginado_admin(f, o, l, off): return _ejecutar_consulta_paginada("SELECT e.*, m.nombre_municipio FROM empresas_prestadores_turisticos e JOIN municipios m ON e.codigo_municipio = m.codigo_municipio", "SELECT COUNT(*) FROM empresas_prestadores_turisticos e", f, o, l, off, ["razon_social_o_nombre_comercial", "activo"])
 def crear_o_actualizar_empresa(d, id=None): return _crear_o_actualizar_generico("empresas_prestadores_turisticos", "id_empresa", d, id)
 
+def obtener_empresa_por_nombre(nombre_empresa: str) -> dict | None:
+    """Busca una empresa por su razón social o nombre comercial."""
+    try:
+        with get_db_connection() as conn:
+            empresa = conn.execute("SELECT * FROM empresas_prestadores_turisticos WHERE razon_social_o_nombre_comercial LIKE ?", (f"%{nombre_empresa}%",)).fetchone()
+            return dict(empresa) if empresa else None
+    except Exception as e:
+        logger.error(f"Error en obtener_empresa_por_nombre: {e}")
+        return None
+
 def obtener_empresa_por_id(empresa_id: int):
     try:
         with get_db_connection() as conn:
@@ -643,6 +653,36 @@ def listar_recursos_por_empresa(empresa_id: int):
             return [dict(row) for row in recursos]
     except Exception as e:
         logger.error(f"Error en listar_recursos_por_empresa: {e}")
+        return []
+
+def buscar_habitaciones_disponibles(id_empresa: int, fecha_inicio: str, fecha_fin: str, capacidad: int) -> list[dict]:
+    """
+    Busca habitaciones disponibles en un hotel para un rango de fechas y capacidad.
+    """
+    query = """
+        SELECT r.*
+        FROM recursos_reservables r
+        WHERE r.id_empresa = :id_empresa
+          AND r.tipo_recurso = 'Habitacion'
+          AND r.capacidad >= :capacidad
+          AND r.id_recurso NOT IN (
+            SELECT res.id_recurso
+            FROM reservas res
+            WHERE NOT (res.fecha_fin <= :fecha_inicio OR res.fecha_inicio >= :fecha_fin)
+          )
+    """
+    params = {
+        "id_empresa": id_empresa,
+        "fecha_inicio": fecha_inicio,
+        "fecha_fin": fecha_fin,
+        "capacidad": capacidad
+    }
+    try:
+        with get_db_connection() as conn:
+            habitaciones = conn.execute(query, params).fetchall()
+            return [dict(row) for row in habitaciones]
+    except Exception as e:
+        logger.error(f"Error en buscar_habitaciones_disponibles: {e}")
         return []
 
 def listar_recursos_por_tipo_y_ciudad(tipo: str, ciudad: str, capacidad: int):
