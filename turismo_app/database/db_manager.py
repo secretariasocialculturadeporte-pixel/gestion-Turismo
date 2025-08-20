@@ -107,6 +107,111 @@ def obtener_empresa_por_id(empresa_id: int):
     except Exception as e:
         logger.error(f"Error en obtener_empresa_por_id: {e}")
         return None
+
+# --- Gestión de Categorías de Empresas ---
+
+def get_categorias_by_parent_id(parent_id: int | None) -> list[dict]:
+    """
+    Obtiene las categorías hijas de una categoría padre.
+    Si parent_id es None, obtiene las categorías de nivel superior.
+    """
+    if parent_id is None:
+        query = "SELECT * FROM categorias WHERE id_categoria_padre IS NULL ORDER BY nombre_categoria"
+        params = ()
+    else:
+        query = "SELECT * FROM categorias WHERE id_categoria_padre = ? ORDER BY nombre_categoria"
+        params = (parent_id,)
+
+    try:
+        with get_db_connection() as conn:
+            categorias = conn.execute(query, params).fetchall()
+            return [dict(row) for row in categorias]
+    except Exception as e:
+        logger.error(f"Error en get_categorias_by_parent_id: {e}")
+        return []
+
+def get_empresa_categorias(id_empresa: int) -> list[dict]:
+    """Obtiene las categorías asignadas a una empresa."""
+    query = """
+        SELECT c.* FROM categorias c
+        JOIN empresa_categorias ec ON c.id_categoria = ec.id_categoria
+        WHERE ec.id_empresa = ?
+    """
+    try:
+        with get_db_connection() as conn:
+            categorias = conn.execute(query, (id_empresa,)).fetchall()
+            return [dict(row) for row in categorias]
+    except Exception as e:
+        logger.error(f"Error en get_empresa_categorias: {e}")
+        return []
+
+def get_category_path(category_id: int) -> list[dict]:
+    """
+    Retrieves the full path of a category from the root.
+    Returns a list of category dicts, from root to the specified category.
+    """
+    path = []
+    current_id = category_id
+    while current_id is not None:
+        try:
+            with get_db_connection() as conn:
+                query = "SELECT * FROM categorias WHERE id_categoria = ?"
+                category = conn.execute(query, (current_id,)).fetchone()
+                if category:
+                    path.insert(0, dict(category))
+                    current_id = category['id_categoria_padre']
+                else:
+                    current_id = None
+        except Exception as e:
+            logger.error(f"Error in get_category_path: {e}")
+            return []
+    return path
+
+def update_empresa_categorias(id_empresa: int, category_ids: list[int], audit_user_id: int | None = None):
+    """Actualiza las categorías de una empresa."""
+    sql_delete = "DELETE FROM empresa_categorias WHERE id_empresa = ?"
+    sql_insert = "INSERT INTO empresa_categorias (id_empresa, id_categoria) VALUES (?, ?)"
+
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            # En una transacción para asegurar la atomicidad
+            cursor.execute("BEGIN")
+            cursor.execute(sql_delete, (id_empresa,))
+            if category_ids:
+                cursor.executemany(sql_insert, [(id_empresa, cat_id) for cat_id in category_ids])
+            cursor.execute("COMMIT")
+            log_audit(audit_user_id, "UPDATE_EMPRESA_CATEGORIAS", f"ID Empresa: {id_empresa}, IDs Categorías: {category_ids}")
+            return True
+    except Exception as e:
+        logger.error(f"Error en update_empresa_categorias: {e}")
+        conn.execute("ROLLBACK")
+        return False
+
+# --- Gestión Geográfica ---
+
+def get_all_departamentos() -> list[dict]:
+    """Obtiene todos los departamentos ordenados por nombre."""
+    try:
+        with get_db_connection() as conn:
+            departamentos = conn.execute("SELECT * FROM departamentos ORDER BY nombre_departamento").fetchall()
+            return [dict(row) for row in departamentos]
+    except Exception as e:
+        logger.error(f"Error en get_all_departamentos: {e}")
+        return []
+
+def get_municipios_by_departamento(codigo_departamento: str) -> list[dict]:
+    """Obtiene todos los municipios de un departamento, ordenados por nombre."""
+    try:
+        with get_db_connection() as conn:
+            municipios = conn.execute(
+                "SELECT * FROM municipios WHERE codigo_departamento = ? ORDER BY nombre_municipio",
+                (codigo_departamento,)
+            ).fetchall()
+            return [dict(row) for row in municipios]
+    except Exception as e:
+        logger.error(f"Error en get_municipios_by_departamento: {e}")
+        return []
 # --- Gestión de Productos/Eventos por Empresa ---
 def listar_productos_eventos_por_empresa_paginado(filtros: dict, orden: dict, limit: int, offset: int):
     base_query = "SELECT * FROM productos_eventos_empresa"
