@@ -282,6 +282,27 @@ def inscribir_equipo_a_evento(id_evento: int, id_usuarios: list[int], audit_user
         conn.rollback()
         return False
 
+def buscar_servicio_por_nombre(nombre_servicio: str) -> dict | None:
+    """Busca un servicio (evento, recurso, etc.) por su nombre en varias tablas."""
+    # Buscar en productos/eventos
+    query1 = "SELECT id_producto_evento as id, nombre as nombre, 'producto_evento' as tipo FROM productos_eventos_empresa WHERE nombre LIKE ?"
+    # Buscar en recursos reservables
+    query2 = "SELECT id_recurso as id, nombre_recurso as nombre, 'recurso_reservable' as tipo FROM recursos_reservables WHERE nombre_recurso LIKE ?"
+
+    try:
+        with get_db_connection() as conn:
+            param = f"%{nombre_servicio}%"
+            servicio = conn.execute(query1, (param,)).fetchone()
+            if servicio: return dict(servicio)
+
+            servicio = conn.execute(query2, (param,)).fetchone()
+            if servicio: return dict(servicio)
+
+            return None
+    except Exception as e:
+        logger.error(f"Error en buscar_servicio_por_nombre: {e}")
+        return None
+
 def crear_clase_evento(datos: dict) -> int | None:
     """Crea una clase o evento usando la tabla productos_eventos_empresa."""
     # Asegurarse de que el tipo es 'Clase' o 'Evento'
@@ -513,6 +534,11 @@ def listar_reservas_paquetes_por_agencia(empresa_id: int):
 
 def crear_o_actualizar_reserva_paquete(datos: dict, reserva_id: int | None = None):
     return _crear_o_actualizar_generico("agencia_reservas_paquetes", "id_reserva_paquete", datos, reserva_id)
+
+def agregar_servicio_a_paquete(datos: dict, audit_user_id: int | None) -> int | None:
+    """Añade un servicio (hotel, tour, etc.) a un paquete turístico."""
+    datos["audit_user_id"] = audit_user_id
+    return _crear_o_actualizar_generico("paquete_servicios", "id_paquete_servicio", datos, None)
 
 # --- Gestión de Guías Turísticos (RAT) ---
 def crear_o_actualizar_perfil_guia(datos: dict, guia_id: int):
