@@ -39,7 +39,6 @@ def update_schema():
         if 'tipo_orden' not in column_names:
             print("Iniciando migración de la tabla 'restaurante_pedidos'...")
             cursor.execute("BEGIN")
-            # Proteger contra la ejecución si la tabla old ya no existe
             try:
                 cursor.execute("ALTER TABLE restaurante_pedidos RENAME TO restaurante_pedidos_old;")
 
@@ -84,16 +83,20 @@ def update_schema():
             FOREIGN KEY (id_evento) REFERENCES productos_eventos_empresa (id_producto_evento),
             FOREIGN KEY (id_usuario) REFERENCES usuarios (id_usuario)
         );""")
+        create_table(conn, """
+        CREATE TABLE IF NOT EXISTS configuracion (
+            clave TEXT PRIMARY KEY,
+            valor TEXT NOT NULL
+        );""")
         conn.commit()
+        print("Tablas adicionales verificadas/creadas.")
 
         # --- MIGRACIÓN 3: Añadir columnas si no existen ---
         cursor.execute("BEGIN")
-        # id_categoria a restaurante_menu_productos
         cursor.execute("PRAGMA table_info(restaurante_menu_productos);")
         if 'id_categoria' not in [info[1] for info in cursor.fetchall()]:
             cursor.execute("ALTER TABLE restaurante_menu_productos ADD COLUMN id_categoria INTEGER REFERENCES categorias(id_categoria);")
 
-        # cupos_disponibles a productos_eventos_empresa
         cursor.execute("PRAGMA table_info(productos_eventos_empresa);")
         if 'cupos_disponibles' not in [info[1] for info in cursor.fetchall()]:
             cursor.execute("ALTER TABLE productos_eventos_empresa ADD COLUMN cupos_disponibles INTEGER DEFAULT 0;")

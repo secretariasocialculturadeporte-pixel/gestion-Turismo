@@ -70,6 +70,27 @@ def _ejecutar_consulta_paginada(base_query: str, count_query: str, filtros: dict
         logger.error(f"Error en consulta paginada: {e}")
         return [], 0
 
+# --- Gestión de Configuración ---
+def guardar_configuracion(clave: str, valor: str):
+    """Guarda o actualiza un valor en la tabla de configuración."""
+    try:
+        with get_db_connection() as conn:
+            conn.execute("INSERT OR REPLACE INTO configuracion (clave, valor) VALUES (?, ?)", (clave, valor))
+            return True
+    except Exception as e:
+        logger.error(f"Error en guardar_configuracion: {e}")
+        return False
+
+def obtener_configuracion(clave: str) -> str | None:
+    """Obtiene un valor de la tabla de configuración."""
+    try:
+        with get_db_connection() as conn:
+            resultado = conn.execute("SELECT valor FROM configuracion WHERE clave = ?", (clave,)).fetchone()
+            return resultado['valor'] if resultado else None
+    except Exception as e:
+        logger.error(f"Error en obtener_configuracion: {e}")
+        return None
+
 def _crear_o_actualizar_generico(tabla: str, p_key: str, datos: dict, id_registro: int | None):
     is_update = id_registro is not None
     audit_user_id = datos.pop('audit_user_id', None)

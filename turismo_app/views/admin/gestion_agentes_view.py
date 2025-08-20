@@ -19,6 +19,12 @@ class GestionAgentesView:
             extension_set="git-hub-flavored",
             code_theme="atom-one-dark"
         )
+        self._load_api_key()
+
+    def _load_api_key(self):
+        api_key = db_manager.obtener_configuracion('OPENAI_API_KEY')
+        if api_key:
+            self.txt_api_key.value = api_key
 
     async def send_order_handler(self, e):
         api_key = self.txt_api_key.value
@@ -29,6 +35,8 @@ class GestionAgentesView:
             self.page.update()
             return
 
+        # Guardar la clave en la configuración para uso futuro
+        db_manager.guardar_configuracion('OPENAI_API_KEY', api_key)
         os.environ["OPENAI_API_KEY"] = api_key
 
         self.progress_ring.visible = True
