@@ -200,6 +200,16 @@ def get_all_departamentos() -> list[dict]:
         logger.error(f"Error en get_all_departamentos: {e}")
         return []
 
+def get_category_by_name(nombre_categoria: str) -> dict | None:
+    """Busca una categoría por su nombre."""
+    try:
+        with get_db_connection() as conn:
+            category = conn.execute("SELECT * FROM categorias WHERE nombre_categoria LIKE ?", (f"%{nombre_categoria}%",)).fetchone()
+            return dict(category) if category else None
+    except Exception as e:
+        logger.error(f"Error en get_category_by_name: {e}")
+        return None
+
 def get_municipios_by_departamento(codigo_departamento: str) -> list[dict]:
     """Obtiene todos los municipios de un departamento, ordenados por nombre."""
     try:
@@ -230,6 +240,44 @@ def obtener_producto_evento_por_id(producto_id: int):
     except Exception as e:
         logger.error(f"Error en obtener_producto_evento_por_id: {e}")
         return None
+
+def inscribir_usuario_a_evento(id_evento: int, id_usuario: int, audit_user_id: int | None) -> int | None:
+    """Inscribe un usuario a un evento/clase."""
+    datos = {
+        "id_evento": id_evento,
+        "id_usuario": id_usuario,
+        "audit_user_id": audit_user_id
+    }
+    return _crear_o_actualizar_generico("inscripciones", "id_inscripcion", datos, None)
+
+def inscribir_equipo_a_evento(id_evento: int, id_usuarios: list[int], audit_user_id: int | None) -> bool:
+    """Inscribe una lista de usuarios (un equipo) a un evento/clase."""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("BEGIN")
+
+            for user_id in id_usuarios:
+                datos = {
+                    "id_evento": id_evento,
+                    "id_usuario": user_id,
+                    "audit_user_id": audit_user_id
+                }
+                _crear_o_actualizar_generico("inscripciones", "id_inscripcion", datos, None)
+
+            cursor.execute("COMMIT")
+            return True
+    except Exception as e:
+        logger.error(f"Error en inscribir_equipo_a_evento: {e}")
+        conn.rollback()
+        return False
+
+def crear_clase_evento(datos: dict) -> int | None:
+    """Crea una clase o evento usando la tabla productos_eventos_empresa."""
+    # Asegurarse de que el tipo es 'Clase' o 'Evento'
+    if 'tipo_oferta' not in datos or datos['tipo_oferta'] not in ['Clase', 'Evento']:
+        datos['tipo_oferta'] = 'Evento' # Valor por defecto
+    return crear_o_actualizar_producto_evento(datos)
 
 def borrar_producto_evento(producto_id: int, audit_user_id: int | None = None):
     try:

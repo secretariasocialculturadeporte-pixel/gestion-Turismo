@@ -1,6 +1,6 @@
 from langchain_core.tools import tool
 from typing import Any, Dict
-from ..database import db_manager
+from turismo_app.database import db_manager
 
 class MenuSoldiers:
     """
@@ -41,5 +41,15 @@ class MenuSoldiers:
         else:
             return {"status": "error", "message": "No se pudo actualizar el producto."}
 
+    @tool
+    def buscar_id_categoria_por_nombre(self, nombre_categoria: str) -> Dict:
+        """Busca el ID de una categoría por su nombre."""
+        print(f"--- 💥 SOLDADO (Menu): ¡ACCIÓN! Buscando ID para categoría '{nombre_categoria}'. ---")
+        category = db_manager.get_category_by_name(nombre_categoria)
+        if category:
+            return {"status": "success", "id_categoria": category["id_categoria"]}
+        else:
+            return {"status": "error", "message": f"No se encontró la categoría '{nombre_categoria}'."}
+
     def get_all_soldiers(self):
-        return [self.crear_producto_menu, self.actualizar_producto_menu]
+        return [self.crear_producto_menu, self.actualizar_producto_menu, self.buscar_id_categoria_por_nombre]
