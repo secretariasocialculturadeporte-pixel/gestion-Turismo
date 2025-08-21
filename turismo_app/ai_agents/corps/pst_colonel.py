@@ -8,12 +8,13 @@ from .units.hotel_captain import get_hotel_captain_graph
 from .units.agencia_viaje_captain import get_agencia_viaje_captain_graph
 from .units.guias_captain import get_guias_captain_graph
 from .units.eventos_captain import get_eventos_captain_graph
+from .units.transporte_captain import get_transporte_captain_graph
 
 llm = ChatOpenAI(model="gpt-4o", temperature=0, model_kwargs={"response_format": {"type": "json_object"}})
 
 class PST_TacticalTask(BaseModel):
     task_description: str = Field(description="La descripción específica y detallada de la misión para el Capitán de área.")
-    responsible_captain: str = Field(description="El Capitán especialista del área de PST. Debe ser uno de: 'Restaurantes', 'Hoteles', 'AgenciasViaje', 'GuiasTuristicos', 'Eventos'.")
+    responsible_captain: str = Field(description="El Capitán especialista del área de PST. Debe ser uno de: 'Restaurantes', 'Hoteles', 'AgenciasViaje', 'GuiasTuristicos', 'Eventos', 'Transporte'.")
 
 class PST_TacticalPlan(BaseModel):
     plan: List[PST_TacticalTask] = Field(description="La lista de misiones tácticas para cumplir la orden del General sobre los PST.")
@@ -27,22 +28,17 @@ class PSTColonelState(TypedDict):
     error: str | None
 
 # Instanciar todos los capitanes
-restaurante_agent = get_restaurante_captain_graph()
-hotel_agent = get_hotel_captain_graph()
-agencia_viaje_agent = get_agencia_viaje_captain_graph()
-guias_agent = get_guias_captain_graph()
-eventos_agent = get_eventos_captain_graph()
-
 captain_executors = {
-    "Restaurantes": restaurante_agent,
-    "Hoteles": hotel_agent,
-    "AgenciasViaje": agencia_viaje_agent,
-    "GuiasTuristicos": guias_agent,
-    "Eventos": eventos_agent,
+    "Restaurantes": get_restaurante_captain_graph(),
+    "Hoteles": get_hotel_captain_graph(),
+    "AgenciasViaje": get_agencia_viaje_captain_graph(),
+    "GuiasTuristicos": get_guias_captain_graph(),
+    "Eventos": get_eventos_captain_graph(),
+    "Transporte": get_transporte_captain_graph(),
 }
 
 async def create_tactical_plan(state: PSTColonelState) -> PSTColonelState:
-    print("--- 🧠 CORONEL PST: Creando Plan Táctico para Prestadores de Servicios Turísticos... ---")
+    print("--- 🧠 CORONEL PST: Creando Plan Táctico... ---")
     structured_llm = llm.with_structured_output(PST_TacticalPlan)
     prompt = f"""
 Eres el Coronel al mando del cuerpo de Prestadores de Servicios Turísticos (PST). Tu misión es analizar la orden del General y delegarla al Capitán del área correcta.
@@ -52,6 +48,7 @@ Capitanes bajo tu mando:
 - 'AgenciasViaje': Gestiona paquetes turísticos, reservas de tours y logística de viajes.
 - 'GuiasTuristicos': Gestiona perfiles de guías, sus especialidades, y la asignación a tours.
 - 'Eventos': Gestiona la creación y promoción de eventos, torneos y actividades especiales.
+- 'Transporte': Gestiona la flota de vehículos, disponibilidad y reservas de transporte.
 
 Analiza la siguiente orden del General y genera el plan táctico en formato JSON: "{state['general_order']}"
 """
@@ -85,12 +82,8 @@ async def captain_node(state: PSTColonelState) -> PSTColonelState:
         return state
 
     print(f"--- 🔽 CORONEL: Delegando a CAP. {captain_name.upper()} -> '{mission.task_description}' ---")
-    result = await captain_agent.ainvoke({"coronel_order": mission.task_description})
-    state["completed_missions"].append({
-        "captain": captain_name,
-        "mission": mission.task_description,
-        "report": result.get("final_report", "Sin reporte.")
-    })
+    result = await captain_agent.ainvoke({"coronel_order": mission.task_description, "app_context": state.get("app_context")})
+    state["completed_missions"].append({ "captain": captain_name, "mission": mission.task_description, "report": result.get("final_report", "Sin reporte.") })
     return state
 
 async def handle_error_node(state: PSTColonelState) -> PSTColonelState:
@@ -110,7 +103,6 @@ def get_pst_colonel_graph():
     workflow.add_node("router", lambda s: s)
     workflow.add_node("handle_error", handle_error_node)
 
-    # Registrar un nodo por cada capitán
     for captain_name in captain_executors.keys():
         workflow.add_node(captain_name, captain_node)
 
@@ -119,14 +111,12 @@ def get_pst_colonel_graph():
     workflow.set_entry_point("planner")
     workflow.add_edge("planner", "router")
 
-    # Crear un diccionario de rutas para el enrutador condicional
     routing_map = {name: name for name in captain_executors.keys()}
     routing_map["handle_error"] = "handle_error"
     routing_map["compiler"] = "compiler"
 
     workflow.add_conditional_edges("router", route_to_captain, routing_map)
 
-    # Conectar todos los nodos de capitanes de vuelta al enrutador
     for captain_name in captain_executors.keys():
         workflow.add_edge(captain_name, "router")
     workflow.add_edge("handle_error", "router")

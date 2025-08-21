@@ -749,15 +749,15 @@ def listar_recursos_por_empresa(empresa_id: int):
         logger.error(f"Error en listar_recursos_por_empresa: {e}")
         return []
 
-def buscar_habitaciones_disponibles(id_empresa: int, fecha_inicio: str, fecha_fin: str, capacidad: int) -> list[dict]:
+def buscar_recursos_disponibles(id_empresa: int, tipo_recurso: str, fecha_inicio: str, fecha_fin: str, capacidad: int) -> list[dict]:
     """
-    Busca habitaciones disponibles en un hotel para un rango de fechas y capacidad.
+    Busca recursos disponibles (habitaciones, vehiculos, etc.) para un rango de fechas y capacidad.
     """
     query = """
         SELECT r.*
         FROM recursos_reservables r
         WHERE r.id_empresa = :id_empresa
-          AND r.tipo_recurso = 'Habitacion'
+          AND r.tipo_recurso = :tipo_recurso
           AND r.capacidad >= :capacidad
           AND r.id_recurso NOT IN (
             SELECT res.id_recurso
@@ -767,16 +767,17 @@ def buscar_habitaciones_disponibles(id_empresa: int, fecha_inicio: str, fecha_fi
     """
     params = {
         "id_empresa": id_empresa,
+        "tipo_recurso": tipo_recurso,
         "fecha_inicio": fecha_inicio,
         "fecha_fin": fecha_fin,
         "capacidad": capacidad
     }
     try:
         with get_db_connection() as conn:
-            habitaciones = conn.execute(query, params).fetchall()
-            return [dict(row) for row in habitaciones]
+            recursos = conn.execute(query, params).fetchall()
+            return [dict(row) for row in recursos]
     except Exception as e:
-        logger.error(f"Error en buscar_habitaciones_disponibles: {e}")
+        logger.error(f"Error en buscar_recursos_disponibles: {e}")
         return []
 
 def listar_recursos_por_tipo_y_ciudad(tipo: str, ciudad: str, capacidad: int):
