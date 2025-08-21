@@ -84,10 +84,22 @@ def update_schema():
             FOREIGN KEY (id_usuario) REFERENCES usuarios (id_usuario)
         );""")
         create_table(conn, """
-        CREATE TABLE IF NOT EXISTS configuracion (
-            clave TEXT PRIMARY KEY,
-            valor TEXT NOT NULL
-        );""")
+        CREATE TABLE IF NOT EXISTS configuracion ( clave TEXT PRIMARY KEY, valor TEXT NOT NULL );""")
+        create_table(conn, """
+        CREATE TABLE IF NOT EXISTS gamificacion_medallas (
+            id_medalla INTEGER PRIMARY KEY AUTOINCREMENT, nombre_medalla TEXT NOT NULL UNIQUE,
+            descripcion TEXT, icono TEXT );""")
+        create_table(conn, """
+        CREATE TABLE IF NOT EXISTS gamificacion_usuario_medallas (
+            id_usuario INTEGER NOT NULL, id_medalla INTEGER NOT NULL,
+            fecha_obtenida TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (id_usuario, id_medalla),
+            FOREIGN KEY (id_usuario) REFERENCES usuarios (id_usuario),
+            FOREIGN KEY (id_medalla) REFERENCES gamificacion_medallas (id_medalla) );""")
+        create_table(conn, """
+        CREATE TABLE IF NOT EXISTS gamificacion_puntos_log (
+            id_log INTEGER PRIMARY KEY AUTOINCREMENT, id_usuario INTEGER NOT NULL,
+            cantidad_puntos INTEGER NOT NULL, motivo TEXT, fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (id_usuario) REFERENCES usuarios (id_usuario) );""")
         conn.commit()
         print("Tablas adicionales verificadas/creadas.")
 
@@ -100,6 +112,10 @@ def update_schema():
         cursor.execute("PRAGMA table_info(productos_eventos_empresa);")
         if 'cupos_disponibles' not in [info[1] for info in cursor.fetchall()]:
             cursor.execute("ALTER TABLE productos_eventos_empresa ADD COLUMN cupos_disponibles INTEGER DEFAULT 0;")
+
+        cursor.execute("PRAGMA table_info(usuarios);")
+        if 'puntos_gamificacion' not in [info[1] for info in cursor.fetchall()]:
+            cursor.execute("ALTER TABLE usuarios ADD COLUMN puntos_gamificacion INTEGER DEFAULT 0;")
 
         conn.commit()
         print("Verificación de columnas adicionales completa.")

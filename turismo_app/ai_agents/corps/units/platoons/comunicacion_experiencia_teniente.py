@@ -46,23 +46,23 @@ def router_node(state: CommsExpLieutenantState):
         return "compiler"
     sargento = state["task_queue"][0].responsible_sargento
     if sargento == "Comunicaciones":
-        return "comunicaciones_sargento"
+        return "comunicaciones_lieutenant_node"
     if sargento == "Experiencia":
-        return "experiencia_sargento"
+        return "experiencia_lieutenant_node"
     return "router"
 
-async def comunicaciones_node(state: CommsExpLieutenantState) -> CommsExpLieutenantState:
+async def comunicaciones_lieutenant_node(state: CommsExpLieutenantState) -> CommsExpLieutenantState:
     mission = state["task_queue"].pop(0)
     sargento_executor = comunicaciones_sargento_builder(state)
     result = await sargento_executor.ainvoke({"teniente_order": mission.task_description, "app_context": state.get("app_context")})
-    state["completed_missions"].append(f"Reporte del Sgto. Comunicaciones: {result['final_report']}")
+    state["completed_missions"].append(f"Reporte del Sgto. Comunicaciones: {result.get('final_report', 'Sin reporte.')}")
     return state
 
-async def experiencia_node(state: CommsExpLieutenantState) -> CommsExpLieutenantState:
+async def experiencia_lieutenant_node(state: CommsExpLieutenantState) -> CommsExpLieutenantState:
     mission = state["task_queue"].pop(0)
     sargento_executor = experiencia_sargento_builder(state)
     result = await sargento_executor.ainvoke({"teniente_order": mission.task_description, "app_context": state.get("app_context")})
-    state["completed_missions"].append(f"Reporte del Sgto. Experiencia: {result['final_report']}")
+    state["completed_missions"].append(f"Reporte del Sgto. Experiencia: {result.get('final_report', 'Sin reporte.')}")
     return state
 
 async def compiler_node(state: CommsExpLieutenantState) -> CommsExpLieutenantState:
@@ -73,20 +73,20 @@ def get_comunicacion_experiencia_lieutenant_graph():
     workflow = StateGraph(CommsExpLieutenantState)
     workflow.add_node("planner", planner_node)
     workflow.add_node("router", lambda s: s)
-    workflow.add_node("comunicaciones_sargento", comunicaciones_node)
-    workflow.add_node("experiencia_sargento", experiencia_node)
+    workflow.add_node("comunicaciones_lieutenant_node", comunicaciones_lieutenant_node)
+    workflow.add_node("experiencia_lieutenant_node", experiencia_lieutenant_node)
     workflow.add_node("compiler", compiler_node)
 
     workflow.set_entry_point("planner")
     workflow.add_edge("planner", "router")
     workflow.add_conditional_edges("router", router_node, {
-        "comunicaciones_sargento": "comunicaciones_sargento",
-        "experiencia_sargento": "experiencia_sargento",
+        "comunicaciones_lieutenant_node": "comunicaciones_lieutenant_node",
+        "experiencia_lieutenant_node": "experiencia_lieutenant_node",
         "compiler": "compiler",
         "router": "router"
     })
-    workflow.add_edge("comunicaciones_sargento", "router")
-    workflow.add_edge("experiencia_sargento", "router")
+    workflow.add_edge("comunicaciones_lieutenant_node", "router")
+    workflow.add_edge("experiencia_lieutenant_node", "router")
     workflow.add_edge("compiler", END)
 
     memory = SqliteSaver.from_conn_string(":memory:")

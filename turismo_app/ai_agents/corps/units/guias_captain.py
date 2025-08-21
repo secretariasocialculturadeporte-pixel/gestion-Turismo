@@ -5,12 +5,13 @@ from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.sqlite import SqliteSaver
 from .platoons.academico_teniente import get_academico_lieutenant_graph
 from .platoons.comunicacion_experiencia_teniente import get_comunicacion_experiencia_lieutenant_graph
+from .platoons.gamificacion_teniente import get_gamificacion_lieutenant_graph
 
 llm = ChatOpenAI(model="gpt-4o", temperature=0, model_kwargs={"response_format": {"type": "json_object"}})
 
 class GuiasTask(BaseModel):
     task_description: str = Field(description="La descripción detallada de la misión para el Teniente.")
-    responsible_lieutenant: str = Field(description="Debe ser uno de: 'Academico', 'ComunicacionExperiencia'.")
+    responsible_lieutenant: str = Field(description="Debe ser uno de: 'Academico', 'ComunicacionExperiencia', 'Gamificacion'.")
 
 class GuiasPlan(BaseModel):
     plan: List[GuiasTask]
@@ -25,6 +26,7 @@ class GuiasCaptainState(TypedDict):
 
 academico_agent = get_academico_lieutenant_graph()
 comunicacion_agent = get_comunicacion_experiencia_lieutenant_graph()
+gamificacion_agent = get_gamificacion_lieutenant_graph()
 
 async def create_platoon_plan(state: GuiasCaptainState) -> GuiasCaptainState:
     print("--- 🧠 CAP. GUÍAS TURÍSTICOS: Creando Plan de Pelotón... ---")
@@ -34,6 +36,7 @@ Eres el Capitán al mando del área de Guías Turísticos. Tu Coronel te ha dado
 Tenientes bajo tu mando:
 - 'Academico': Experto en la formación, certificación y asignación de guías a cursos.
 - 'ComunicacionExperiencia': Experto en la comunicación con los guías, gestión de perfiles y feedback de los turistas.
+- 'Gamificacion': Experto en el sistema de puntos, medallas y rankings para motivar a los guías y usuarios.
 Analiza la orden y genera el plan en formato JSON: "{state['coronel_order']}"
 """
     plan = await structured_llm.ainvoke(prompt)
@@ -45,7 +48,14 @@ def route_to_lieutenant(state: GuiasCaptainState):
     lieutenant = state["task_queue"][0].responsible_lieutenant
     if lieutenant == 'Academico': return "academico_lieutenant"
     if lieutenant == 'ComunicacionExperiencia': return "comunicacion_lieutenant"
+    if lieutenant == 'Gamificacion': return "gamificacion_lieutenant"
     return "route_to_lieutenant"
+
+async def gamificacion_node(state: GuiasCaptainState) -> GuiasCaptainState:
+    mission = state["task_queue"].pop(0)
+    result = await gamificacion_agent.ainvoke({"captain_order": mission.task_description})
+    state["completed_missions"].append({"lieutenant": "Gamificación", "report": result.get("final_report", "Sin reporte.")})
+    return state
 
 async def academico_node(state: GuiasCaptainState) -> GuiasCaptainState:
     mission = state["task_queue"].pop(0)
@@ -70,6 +80,7 @@ def get_guias_captain_graph():
     workflow.add_node("router", lambda s: s)
     workflow.add_node("academico_lieutenant", academico_node)
     workflow.add_node("comunicacion_lieutenant", comunicacion_node)
+    workflow.add_node("gamificacion_lieutenant", gamificacion_node)
     workflow.add_node("compiler", compile_final_report)
 
     workflow.set_entry_point("planner")
@@ -77,10 +88,12 @@ def get_guias_captain_graph():
     workflow.add_conditional_edges("router", route_to_lieutenant, {
         "academico_lieutenant": "academico_lieutenant",
         "comunicacion_lieutenant": "comunicacion_lieutenant",
+        "gamificacion_lieutenant": "gamificacion_lieutenant",
         "compile_report": "compiler"
     })
     workflow.add_edge("academico_lieutenant", "router")
     workflow.add_edge("comunicacion_lieutenant", "router")
+    workflow.add_edge("gamificacion_lieutenant", "router")
     workflow.add_edge("compiler", END)
 
     memory = SqliteSaver.from_conn_string(":memory:")

@@ -689,6 +689,53 @@ def listar_costos_por_empresa(empresa_id: int):
         logger.error(f"Error en listar_costos_por_empresa: {e}")
         return []
 
+# --- Gestión de Gamificación ---
+def conceder_puntos(id_usuario: int, puntos: int, motivo: str, audit_user_id: int | None) -> bool:
+    """Concede puntos a un usuario, lo registra y actualiza su total."""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("BEGIN")
+            # Registrar el log de puntos
+            cursor.execute(
+                "INSERT INTO gamificacion_puntos_log (id_usuario, cantidad_puntos, motivo) VALUES (?, ?, ?)",
+                (id_usuario, puntos, motivo)
+            )
+            # Actualizar el total de puntos del usuario
+            cursor.execute(
+                "UPDATE usuarios SET puntos_gamificacion = puntos_gamificacion + ? WHERE id_usuario = ?",
+                (puntos, id_usuario)
+            )
+            cursor.execute("COMMIT")
+            log_audit(audit_user_id, "CONCEDER_PUNTOS", f"Usuario: {id_usuario}, Puntos: {puntos}, Motivo: {motivo}")
+            return True
+    except Exception as e:
+        logger.error(f"Error en conceder_puntos: {e}")
+        conn.rollback()
+        return False
+
+def crear_medalla(nombre: str, descripcion: str, icono: str, audit_user_id: int | None) -> int | None:
+    """Crea un nuevo tipo de medalla."""
+    datos = {"nombre_medalla": nombre, "descripcion": descripcion, "icono": icono, "audit_user_id": audit_user_id}
+    return _crear_o_actualizar_generico("gamificacion_medallas", "id_medalla", datos, None)
+
+def get_medalla_por_nombre(nombre_medalla: str) -> dict | None:
+    """Busca una medalla por su nombre."""
+    try:
+        with get_db_connection() as conn:
+            medalla = conn.execute("SELECT * FROM gamificacion_medallas WHERE nombre_medalla LIKE ?", (f"%{nombre_medalla}%",)).fetchone()
+            return dict(medalla) if medalla else None
+    except Exception as e:
+        logger.error(f"Error en get_medalla_por_nombre: {e}")
+        return None
+
+def otorgar_medalla(id_usuario: int, id_medalla: int, audit_user_id: int | None) -> bool:
+    """Otorga una medalla a un usuario."""
+    datos = {"id_usuario": id_usuario, "id_medalla": id_medalla, "audit_user_id": audit_user_id}
+    # Usamos el genérico, pero no nos importa el ID de la tabla de enlace, solo si tuvo éxito.
+    result_id = _crear_o_actualizar_generico("gamificacion_usuario_medallas", "id_usuario", datos, None)
+    return result_id is not None
+
 # --- Gestión de Recursos Reservables ---
 def crear_o_actualizar_recurso(datos: dict, recurso_id: int | None = None):
     return _crear_o_actualizar_generico("recursos_reservables", "id_recurso", datos, recurso_id)
