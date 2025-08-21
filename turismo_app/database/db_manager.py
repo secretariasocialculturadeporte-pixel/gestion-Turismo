@@ -375,17 +375,39 @@ def obtener_resumen_clientes_por_empresa(empresa_id: int):
         logger.error(f"Error en obtener_resumen_clientes_por_empresa: {e}")
         return []
 
-# ... y así para el resto de funciones ...
-def listar_atractivos_admin_paginado(f, o, l, off): return [], 0
-def crear_o_actualizar_atractivo(d, id=None): return 1
+# --- Gestión de Atractivos Turísticos (Detallado) ---
+def listar_atractivos_admin_paginado(filtros, orden, limit, offset):
+    """Lista atractivos con paginación y filtros para el panel de administración."""
+    base_query = "SELECT a.*, m.nombre_municipio FROM atractivos_turisticos a JOIN municipios m ON a.codigo_municipio = m.codigo_municipio"
+    count_query = "SELECT COUNT(*) FROM atractivos_turisticos a"
+    allowed_cols = ["nombre", "tipo_atractivo", "subtipo_atractivo", "activo"]
+    return _ejecutar_consulta_paginada(base_query, count_query, filtros, orden, limit, offset, allowed_cols)
 
-def obtener_atractivo_por_id(atractivo_id: int):
+def crear_o_actualizar_atractivo_detallado(datos: dict, atractivo_id: int | None = None):
+    """
+    Crea o actualiza un atractivo turístico con todos sus detalles.
+    Utiliza el manejador genérico.
+    """
+    # El nombre de la PK en la tabla es 'id_atractivo'
+    return _crear_o_actualizar_generico("atractivos_turisticos", "id_atractivo", datos, atractivo_id)
+
+def obtener_atractivo_detallado_por_id(atractivo_id: int):
+    """
+    Obtiene un atractivo turístico con detalles y el nombre del municipio y departamento.
+    """
+    query = """
+        SELECT a.*, m.nombre_municipio, d.nombre_departamento
+        FROM atractivos_turisticos a
+        JOIN municipios m ON a.codigo_municipio = m.codigo_municipio
+        JOIN departamentos d ON m.codigo_departamento = d.codigo_departamento
+        WHERE a.id_atractivo = ?
+    """
     try:
         with get_db_connection() as conn:
-            atractivo = conn.execute("SELECT * FROM atractivos_turisticos WHERE id_atractivo = ?", (atractivo_id,)).fetchone()
+            atractivo = conn.execute(query, (atractivo_id,)).fetchone()
             return dict(atractivo) if atractivo else None
     except Exception as e:
-        logger.error(f"Error en obtener_atractivo_por_id: {e}")
+        logger.error(f"Error en obtener_atractivo_detallado_por_id: {e}")
         return None
 
 def listar_vacantes_admin_paginado(f, o, l, off): return [], 0
