@@ -4,5 +4,4 @@ langchain-community
 langgraph
 langsmith
 llama-cpp-python
-hf-transfer
 huggingface-hub
