@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turismo App</title>
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <header>
+        <h1>Portal Turístico</h1>
+        <div id="auth-container">
+            <form id="login-form">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+        <div id="user-container" style="display: none;">
+            <span>Welcome, <b id="user-info"></b>!</span>
+            <button id="logout-button">Logout</button>
+        </div>
+    </header>
+
+    <div id="app-container" style="display: none;">
+        <nav id="main-nav">
+            <button data-view="home">Inicio</button>
+            <button data-view="turismo">Turismo</button>
+            <button data-view="empleo">Empleo</button>
+            <button data-view="feedback">Feedback</button>
+            <!-- More buttons will be added based on user role -->
+        </nav>
+        <main id="main-content">
+            <!-- Dynamic content will be rendered here -->
+        </main>
+        <div id="item-details" class="modal"></div>
+    </div>
+
+    <script type="module" src="static/js/app.js"></script>
+</body>
+</html>
